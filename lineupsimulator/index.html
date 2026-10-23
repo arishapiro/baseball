@@ -1,0 +1,1683 @@
+<!--
+Best Batting Lineup for your Little League Team
+
+Copyright © 2026 Ari Shapiro. All rights reserved.
+
+Licensed for personal, non-commercial use only.
+You may use this software in its original form for personal, non-commercial purposes.
+Copying, modification, redistribution, sublicensing, sale, publication, commercial use,
+or incorporation of this software or its source code into another product or service
+is prohibited without the author's prior written permission.
+
+Contact: ariyshapiro@gmail.com
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM,
+DAMAGES, OR OTHER LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE
+OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Best Batting Lineup for your Little League Team</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:22px;line-height:1.35}
+.card{border:1px solid #ddd;border-radius:12px;padding:15px;margin:14px 0;box-shadow:0 1px 3px #0001}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:end} label{font-weight:650;display:block;margin:6px 0 3px}
+input,select,button{font-size:14px;padding:7px} input[type=number]{width:88px} button{border:1px solid #aaa;border-radius:8px;background:#f7f7f7;cursor:pointer} .primary{background:#1769e0;color:white;border-color:#1769e0}
+table{border-collapse:collapse;width:100%;font-size:13px} th,td{border-bottom:1px solid #eee;padding:6px;text-align:left} th{background:#fafafa;position:sticky;top:0} .wrap{overflow:auto;max-height:520px} .muted{color:#666} .ok{color:#086b08;font-weight:normal} .bad{color:#a00020;font-weight:normal}
+.bar{height:13px;background:#eee;border-radius:99px;overflow:hidden} #prog{height:100%;width:0%;background:#1769e0}
+#managerProg{height:100%;width:0%;background:#1769e0}
+code{background:#f2f2f2;padding:1px 4px;border-radius:4px}
+.pos{color:#086b08;font-weight:normal}.neg{color:#a00020;font-weight:normal}.tiny{font-size:12px}
+.gameviz{display:grid;grid-template-columns:minmax(360px,410px) minmax(300px,520px) minmax(230px,1fr);gap:26px;align-items:start}
+.diamond{position:relative;aspect-ratio:1/1;max-width:520px;width:100%;margin:auto;background:#edf7ec;border:1px solid #cfd8cf;border-radius:22px;overflow:hidden}
+.infield{position:absolute;width:45%;height:45%;left:27.5%;top:27.5%;border:2px solid #c59b6b;transform:rotate(45deg);background:#d9b98d55}
+.base{position:absolute;width:18px;height:18px;background:white;border:2px solid #999;transform:rotate(45deg);z-index:4}
+.base-label{position:absolute;font-size:11px;color:#555;z-index:4}
+#baseHome{left:50%;top:81%;margin:-9px} #base1{left:76%;top:55%;margin:-9px} #base2{left:50%;top:29%;margin:-9px} #base3{left:24%;top:55%;margin:-9px}
+#labHome{left:47%;top:85%} #lab1{left:79%;top:55%} #lab2{left:48%;top:24%} #lab3{left:15%;top:55%}
+.fielder{position:absolute;width:30px;height:30px;border:1px solid #8ba28b;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;background:#ffffffcc;color:#496049;z-index:2}
+.runner{position:absolute;min-width:38px;max-width:110px;padding:4px 6px;border-radius:999px;background:#1769e0;color:white;font-size:10px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:7;transform:translate(-50%,-50%);transition:left .45s ease,top .45s ease,opacity .25s ease}
+.runner.batter{background:#333}
+.scoreboard{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.scorebox{border:1px solid #ddd;border-radius:10px;padding:9px;text-align:center}.scorebig{font-size:24px;font-weight:750}
+.playlog{height:270px;overflow:auto;border:1px solid #eee;border-radius:10px;padding:8px;background:#fafafa}.playlog div{padding:4px 2px;border-bottom:1px solid #eee}.playlog div:last-child{border-bottom:0}
+.lineupPanel{border:1px solid #ddd;border-radius:12px;padding:10px;background:#fafafa}.lineupPanel h3{margin:0 0 8px}.lineupRow{display:grid;grid-template-columns:26px 1fr;gap:7px;padding:7px 6px;border-radius:8px;align-items:center}.lineupRow.current{background:#e8f1ff;border:1px solid #9dbcf3;font-weight:750}.lineupNum{font-weight:750;color:#666;text-align:right}.outcomeBox{border:2px solid #1769e0;border-radius:12px;padding:10px 12px;text-align:center;margin:10px 0;background:#f7fbff}.outcomeCode{font-size:34px;font-weight:850;letter-spacing:.03em}.outcomeDesc{font-size:13px;color:#555;margin-top:2px}
+@media(max-width:1150px){.gameviz{grid-template-columns:minmax(340px,390px) 1fr}.gameviz>div:last-child{grid-column:1/-1}.playlog{height:180px}}@media(max-width:660px){.gameviz{grid-template-columns:1fr}.gameviz>div:last-child{grid-column:auto}.lineupPanel{order:2}.diamond{order:1}}
+</style>
+
+<style>
+#vizRunIndicator.runFlash{opacity:1;transform:scale(1.08)}
+#vizScore.runPulse{transform:scale(1.18);transition:transform .18s ease}
+</style>
+</head>
+<body>
+<h1>Best Batting Lineup for your Little League Team</h1>
+<div class="author" style="margin:4px 0 18px 0;line-height:1.45">
+  <b>Ari Shapiro, PhD</b><br>
+  <a href="mailto:ariyshapiro@gmail.com">ariyshapiro@gmail.com</a>
+</div>
+<div class="card" id="descriptionSummary" style="margin-bottom:16px">
+  <p style="margin:0;line-height:1.55">Calculates the best batting lineup given your existing stats by simulating Little League games. The best batting lineup is the one that produces, on average, the most runs per game. Assumptions about the game—such as the number of innings, frequency of passed balls/wild pitches, chances of stealing, and other simulation parameters—can be changed in <b>Settings</b>.</p>
+</div>
+<p class="muted">Uses hits, walks, HBP, strikeouts, singles, doubles, triples, HR, ROE, FC, sacrifice flies, sacrifices, stolen bases, caught stealing, and wild pitches/passed balls. Assumes <b>no double plays</b>. Batted outs are split into ground balls and fly balls using adjustable assumptions, with configurable runner advancement on grounders and fielder's choices. Players with fewer than half as many PA as the team PA leader are automatically excluded.</p>
+
+<div class="card" id="inputInstructions" style="margin-bottom:16px">
+<h2 style="margin-top:0">Getting started</h2>
+<p>Upload either a <b>GameChanger stats export CSV</b> or a simple batting-stat CSV using the format below. For a full GameChanger export, the simulator automatically reads the Batting section and ignores Pitching and Fielding statistics.</p>
+<p><b>Simple CSV format:</b></p>
+<pre style="overflow-x:auto;white-space:pre;padding:12px;border:1px solid #ddd;border-radius:8px;background:#f7f7f7;font-size:12px;line-height:1.45">First,Last,PA,H,1B,2B,3B,HR,BB,SO,HBP,SAC,SF,ROE,FC,SB,CS
+John,Smith,50,15,11,3,1,0,8,10,2,0,1,2,1,12,2
+Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
+<p class="muted" style="margin-bottom:0"><b>PA</b> = plate appearances, <b>H</b> = hits, <b>1B/2B/3B/HR</b> = singles/doubles/triples/home runs, <b>BB</b> = walks, <b>SO</b> = strikeouts, <b>HBP</b> = hit by pitch, <b>SAC</b> = sacrifice bunts, <b>SF</b> = sacrifice flies, <b>ROE</b> = reached on error, <b>FC</b> = fielder's choice, <b>SB</b> = stolen bases, and <b>CS</b> = caught stealing.</p>
+</div>
+<div class="card">
+<h2>Roster / CSV</h2>
+<div class="row">
+  <div><label>Upload a different GameChanger CSV</label><input id="file" type="file" accept=".csv,text/csv"></div>
+  <button id="useEmbedded" class="primary">Use uploaded Red Sox stats</button>
+</div>
+<p class="muted">This app has your Red Sox stats embedded. Each plate appearance is modeled as one weighted draw from actual event counts, including HR explicitly. You can also load a new CSV.</p>
+<div id="loadMsg"></div>
+</div>
+
+<div class="card" id="settings" style="display:none">
+<h2>Settings</h2>
+<div class="row">
+<div><label>Eligible player minimum PA (% of team PA leader)</label><input id="eligiblePaPct" type="number" min="0" max="1" step="0.05" value="0.50"><div class="muted" style="font-size:11px">0.50 = at least half as many PA as the team leader.</div></div>
+<div><label>Innings</label><input id="innings" type="number" min="1" max="9" value="7"></div>
+<div><label>% games to full innings (0–1)</label><input id="fullInningPct" type="number" min="0" max="1" step="0.01" value="1"></div>
+<div><label>Batting side</label><select id="homeAway"><option value="away">Away</option><option value="home">Home</option></select></div>
+<div><label>Win % (0–1)</label><input id="winPct" type="number" min="0" max="1" step="0.01" value="0.5"></div>
+<div><label>Simulations per lineup</label><input id="sims" type="number" min="50" max="20000" value="1000"></div>
+<div><label>Random baseline orders</label><input id="randomBaselineOrders" type="number" min="5" max="1000" value="50"></div>
+<div><label>Lineup evaluations / GA budget</label><input id="cands" type="number" min="50" max="100000" value="5000"></div>
+<div><label>Wild pitch / passed ball: once every N batters</label><input id="wpEvery" type="number" min="1" max="999" value="20"></div>
+<div><label>Default SB success if no CS</label><input id="defSb" type="number" min="0" max="1" step=".01" value=".75"></div>
+<div><label>Steal 2nd aggressiveness</label><input id="sb2Weight" type="number" min="0" max="2" step=".05" value="1.00"></div>
+<div><label>Steal 3rd aggressiveness</label><input id="sb3Weight" type="number" min="0" max="2" step=".05" value="0.55"></div>
+<div><label>Steal home aggressiveness</label><input id="sbhWeight" type="number" min="0" max="2" step=".05" value="0.15"></div>
+<div><label>Search</label><select id="mode"><option value="ga">Genetic algorithm</option><option value="smart">Smart random + baseball seeds</option><option value="current">Current order only</option><option value="all">All permutations if ≤9 hitters</option></select></div>
+</div>
+<p class="muted">Time-limited games use exactly one fewer inning than the Innings setting. If Batting side is Home, games judged as wins skip the team's final offensive half-inning.</p>
+<h3>Runner advancement</h3>
+<div class="row">
+<div><label>Score from 2nd on single</label><input id="s2single" type="number" min="0" max="1" step=".05" value=".60"></div>
+<div><label>Score from 1st on double</label><input id="s1double" type="number" min="0" max="1" step=".05" value=".45"></div>
+<div><label>Take 3rd from 1st on single</label><input id="f1single" type="number" min="0" max="1" step=".05" value=".35"></div>
+<div><label>Tag from 3rd on sac fly / fly out</label><input id="sfScore" type="number" min="0" max="1" step=".05" value=".85"></div>
+</div>
+<h3>Batted-out assumptions</h3>
+<div class="row">
+<div><label>Ground-ball rate on batted outs</label><input id="gbRate" type="number" min="0" max="1" step=".05" value=".55"></div>
+<div><label>Grounder: runner from 3rd scores</label><input id="gbScore3" type="number" min="0" max="1" step=".05" value=".35"></div>
+<div><label>Grounder: runner from 2nd takes 3rd</label><input id="gbAdv2" type="number" min="0" max="1" step=".05" value=".45"></div>
+<div><label>Grounder: force runner at 2nd if on 1st</label><input id="gbForce1" type="number" min="0" max="1" step=".05" value=".60"></div>
+<div><label>Fly out: runner from 2nd takes 3rd</label><input id="flyAdv2" type="number" min="0" max="1" step=".05" value=".25"></div>
+<div><label>FC: lead runner out</label><input id="fcLeadOut" type="number" min="0" max="1" step=".05" value=".75"></div>
+<div><label>FC: other runners advance</label><input id="fcOtherAdv" type="number" min="0" max="1" step=".05" value=".65"></div>
+</div>
+<p class="muted">For ordinary batted outs, strikeouts stay as strikeouts, while non-strikeout outs are randomly treated as ground balls or fly balls. Ground balls and fielders choices can produce one force out, but never a double play.</p>
+<p class="muted">Stolen-base attempt rate starts from <code>(SB + CS) / (H + BB + HBP)</code>, but SB is treated as <b>bases stolen</b>, not just attempts to steal second. Each simulated game gives every player a season-based steal budget of <code>(SB + CS) / GP</code>. A runner can try for 2nd, 3rd, or home in the same trip, but each attempt spends from that budget, so his later steal chance drops after he has already stolen or attempted. The base-specific aggressiveness settings make stealing 2nd more likely than stealing 3rd, and stealing home much rarer. Success rate is <code>SB / (SB + CS)</code>, or the default above if CS is unavailable.</p><p class="muted">The genetic algorithm seeds the population with current, OBP, OPS/SLG, speed, and baseball-style orders; keeps the best lineups each generation; then creates children by order-crossover and swap/insertion mutations.</p>
+<h3>Lineup locks <span class="muted" style="font-size:13px;font-weight:normal">(optional)</span></h3>
+<p class="muted">Force a player into a specific batting slot. The optimizer will keep locked players fixed and optimize the remaining slots. No batting slots are locked by default. You can leave this entire section unchanged for a normal optimization run.</p>
+<div class="row"><button id="defaultLocks">Reset to no locks</button><button id="clearLocks">Clear all locks</button></div>
+<div id="locks" class="wrap"></div>
+
+<div style="margin-top:28px;padding-top:22px;border-top:2px solid #ddd">
+  <h2 style="margin:0 0 6px">Start the simulation</h2>
+  <p style="margin:0 0 14px" class="muted">When your settings are ready, click <b>Run Optimizer</b> below to start simulating and comparing batting orders.</p>
+  <button id="run" class="primary" style="font-size:18px;padding:12px 24px;font-weight:700">▶ Run Optimizer</button>
+  <button id="stop" style="margin-left:8px">Stop</button>
+</div>
+<div class="bar" style="margin-top:14px"><div id="prog"></div></div><div id="status"></div>
+<div id="currentTestLineup" style="display:none;margin-top:12px;padding:12px 14px;border:1px solid #ddd;border-radius:8px;background:#fafafa">
+  <b>Top 5 lineups so far</b>
+  <div id="currentTestLineupText" style="margin-top:8px;line-height:1.55"></div>
+</div>
+</div>
+
+
+<div class="card" id="resultsCard" style="display:none"><h2>Results</h2><div id="summary"></div><div id="results" class="wrap"></div></div>
+<div class="card" id="positionDistributionCard" style="display:none">
+<h2>Player batting-position distributions — Top 30 lineups</h2>
+<p class="muted">Each player has a separate bar chart. The x-axis is batting position and the bar height is how many of the top 30 optimized lineups place that player in that position.</p>
+<div id="positionDistribution"></div>
+</div>
+
+
+<div class="card" id="gameVizCard" style="display:none">
+<h2>Watch one simulated game</h2>
+<p class="muted">This animates one game using the same hitter event probabilities, stolen-base budgets, runner-advancement rules, and inning setting as the optimizer. The simulator models only your offense, so the opponent score is shown as 0.</p>
+<div class="row">
+  <div><label>Lineup to watch</label><select id="vizLineup"><option value="best">Latest optimized lineup</option><option value="opt1">Optimized #1</option><option value="opt2">Optimized #2</option><option value="opt3">Optimized #3</option><option value="opt4">Optimized #4</option><option value="opt5">Optimized #5</option><option value="opt6">Optimized #6</option><option value="opt7">Optimized #7</option><option value="opt8">Optimized #8</option><option value="opt9">Optimized #9</option><option value="opt10">Optimized #10</option><option value="current">Current roster order</option><option value="obp">OBP order (high → low)</option><option value="revobp">Reverse OBP (low → high)</option><option value="ops">OPS order (high → low)</option><option value="revops">Reverse OPS (low → high)</option></select></div>
+  <div><label>Animation speed</label><select id="vizSpeed"><option value="1100">Normal</option><option value="600">Fast</option><option value="250">Very fast</option></select></div>
+  <div><label>Games to watch</label><input id="vizGames" type="number" min="1" max="10000" value="1" style="width:110px"></div>
+  <button id="watchGame" class="primary">Watch simulated games</button>
+  <button id="pauseGame">Pause</button>
+  <button id="stopWatch">Stop</button>
+</div>
+<div class="gameviz">
+  <div class="lineupPanel">
+    <h3>Batting order</h3>
+    <div id="vizLineupList"></div>
+  </div>
+  <div class="diamond" id="diamond">
+    <div class="infield"></div>
+    <div class="base" id="baseHome"></div><span class="base-label" id="labHome">HOME</span>
+    <div class="base" id="base1"></div><span class="base-label" id="lab1">1B</span>
+    <div class="base" id="base2"></div><span class="base-label" id="lab2">2B</span>
+    <div class="base" id="base3"></div><span class="base-label" id="lab3">3B</span>
+    <div class="fielder" style="left:47%;top:56%">P</div>
+    <div class="fielder" style="left:47%;top:88%">C</div>
+    <div class="fielder" style="left:68%;top:50%">1B</div>
+    <div class="fielder" style="left:61%;top:38%">2B</div>
+    <div class="fielder" style="left:36%;top:39%">SS</div>
+    <div class="fielder" style="left:27%;top:50%">3B</div>
+    <div class="fielder" style="left:16%;top:20%">LF</div>
+    <div class="fielder" style="left:47%;top:12%">CF</div>
+    <div class="fielder" style="left:78%;top:20%">RF</div>
+    <div id="runnerLayer"></div>
+  </div>
+  <div>
+    <div class="scoreboard">
+      <div class="scorebox"><div class="muted tiny">RUNS</div><div class="scorebig" id="vizRuns">0</div></div>
+      <div class="scorebox"><div class="muted tiny">INNING</div><div class="scorebig" id="vizInning">1</div></div>
+      <div class="scorebox"><div class="muted tiny">OUTS</div><div class="scorebig" id="vizOuts">0</div></div>
+    </div>
+    <p><b>At bat:</b> <span id="vizBatter">—</span></p>
+<div id="vizBatterStats" style="display:grid;grid-template-columns:repeat(4,minmax(58px,1fr));gap:6px;margin:8px 0 10px;">
+  <div class="scorebox"><div class="muted tiny">AVG</div><div id="vizBatterAVG">—</div></div>
+  <div class="scorebox"><div class="muted tiny">OBP</div><div id="vizBatterOBP">—</div></div>
+  <div class="scorebox"><div class="muted tiny">OPS</div><div id="vizBatterOPS">—</div></div>
+  <div class="scorebox"><div class="muted tiny">SB</div><div id="vizBatterSB">—</div></div>
+</div>
+    <div class="outcomeBox" aria-live="polite">
+      <div class="muted tiny">AT-BAT RESULT</div>
+      <div class="outcomeCode" id="vizOutcomeCode">—</div>
+      <div class="outcomeDesc" id="vizOutcomeDesc">Ready</div>
+    </div>
+    <p><b>Last play:</b> <span id="vizPlay">Ready</span></p>
+    <p><b>Score:</b> Red Sox <strong id="vizScore">0</strong> – Opponent <strong>0</strong></p>
+    <div id="vizRunIndicator" style="display:inline-block;margin:4px 0 8px;padding:6px 12px;border:1px solid #bbb;border-radius:9px;font-weight:700;opacity:0;transform:scale(.95);transition:opacity .15s ease,transform .15s ease">RUN!</div>
+    <p><b>Game:</b> <span id="vizGameNumber">1 of 1</span> &nbsp; <b>Series runs:</b> <span id="vizSeriesRuns">0</span> &nbsp; <b>Avg:</b> <span id="vizSeriesAvg">0.00</span></p>
+    <div class="playlog" id="vizLog" aria-live="polite"></div>
+  </div>
+</div>
+</div>
+
+<div class="card" id="validationCard" style="display:none">
+<h2>Model validation / sanity check</h2>
+<p class="muted">This simulates each player’s plate appearances many times and compares the simulated cumulative batting line to the original GameChanger data. The optimizer is only useful if these values are close.</p>
+<div class="row">
+<div><label>Validation seasons</label><input id="valSeasons" type="number" min="50" max="10000" value="1000"></div>
+<button id="validateBtn" class="primary">Run sanity check</button>
+<button id="calibrateBtn">Calibrate assumptions to team runs</button>
+</div>
+<div id="validationStatus"></div>
+<div id="validationResults" class="wrap"></div>
+</div>
+
+<div class="card" id="playersCard" style="display:none"><h2>Eligible players</h2><div id="eligibilityNote"></div><div id="players" class="wrap"></div><div id="excluded"></div></div>
+
+
+<div class="card" id="leverageCard" style="display:none"><h2>Lineup leverage / forced-slot analysis</h2><p class="muted">Choose a player and the app will force him into each batting slot, then re-optimize the rest of the lineup around him. This helps explain why a strong hitter or basestealer may be worth more in one spot than another.</p><div class="row"><div><label>Player</label><select id="leveragePlayer"></select></div><div><label>Simulations per lineup</label><input id="levSims" type="number" min="50" max="5000" value="500"></div><div><label>GA budget per slot</label><input id="levBudget" type="number" min="50" max="20000" value="1200"></div><button id="leverageBtn" class="primary">Run leverage analysis</button><button id="stopLeverage">Stop</button></div><div class="bar"><div id="levProg"></div></div><div id="leverageStatus"></div><div id="leverageResults" class="wrap"></div></div>
+
+<div class="card" id="explainCard" style="display:none"><h2>Bottom-order value + pairwise synergy</h2><p class="muted">These diagnostics help explain counterintuitive lineups where a stronger hitter is placed lower. Turnover value tests whether a player creates value as a second leadoff hitter in spots 7–9. Pairwise synergy estimates which hitter-before-hitter combinations create more runs than typical random adjacency.</p><h3>Turnover / bottom-order value</h3><div class="row"><div><label>Simulations per lineup</label><input id="turnSims" type="number" min="50" max="3000" value="350"></div><div><label>GA budget per forced slot</label><input id="turnBudget" type="number" min="50" max="10000" value="650"></div><button id="turnoverBtn" class="primary">Run turnover value</button><button id="stopTurnover">Stop</button></div><div class="bar"><div id="turnProg"></div></div><div id="turnoverStatus"></div><div id="turnoverResults" class="wrap"></div><h3>Pairwise synergy matrix</h3><div class="row"><div><label>Random adjacent lineups per pair</label><input id="pairSamples" type="number" min="5" max="500" value="60"></div><div><label>Simulations per lineup</label><input id="pairSims" type="number" min="25" max="2000" value="150"></div><button id="pairwiseBtn" class="primary">Run pairwise synergy</button><button id="stopPairwise">Stop</button></div><p class="muted tiny">The matrix value is runs/game above or below a randomized baseline when the row player bats immediately before the column player. Positive values suggest a useful sequence; negative values suggest that adjacency is less helpful.</p><div class="bar"><div id="pairProg"></div></div><div id="pairwiseStatus"></div><div id="pairwiseResults" class="wrap"></div></div>
+
+<script>
+const EMBEDDED = [{"GP": 16.0, "PA": 46.0, "AB": 39.0, "AVG": 0.308, "OBP": 0.413, "OPS": 0.875, "SLG": 0.462, "H": 12.0, "1B": 7.0, "2B": 4.0, "3B": 1.0, "HR": 0.0, "RBI": 6.0, "R": 7.0, "BB": 6.0, "SO": 13.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 5.0, "CS": 0.0, "SB%": 100.0, "name": "Basher, mediocre runner"}, {"GP": 15.0, "PA": 42.0, "AB": 32.0, "AVG": 0.25, "OBP": 0.429, "OPS": 0.804, "SLG": 0.375, "H": 8.0, "1B": 4.0, "2B": 4.0, "3B": 0.0, "HR": 0.0, "RBI": 5.0, "R": 6.0, "BB": 9.0, "SO": 17.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 7.0, "CS": 1.0, "SB%": 87.5, "name": "Basher, fast runner"}, {"GP": 16.0, "PA": 50.0, "AB": 32.0, "AVG": 0.469, "OBP": 0.66, "OPS": 1.16, "SLG": 0.5, "H": 15.0, "1B": 14.0, "2B": 1.0, "3B": 0.0, "HR": 0.0, "RBI": 7.0, "R": 19.0, "BB": 12.0, "SO": 6.0, "HBP": 6.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 37.0, "CS": 2.0, "SB%": 94.87, "name": "OBP leader"}, {"GP": 12.0, "PA": 37.0, "AB": 33.0, "AVG": 0.576, "OBP": 0.622, "OPS": 1.258, "SLG": 0.636, "H": 19.0, "1B": 17.0, "2B": 2.0, "3B": 0.0, "HR": 0.0, "RBI": 13.0, "R": 8.0, "BB": 4.0, "SO": 1.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 10.0, "CS": 2.0, "SB%": 83.33, "name": "Contact hitter, never strikes out"}, {"GP": 17.0, "PA": 41.0, "AB": 28.0, "AVG": 0.143, "OBP": 0.415, "OPS": 0.557, "SLG": 0.143, "H": 4.0, "1B": 4.0, "2B": 0.0, "3B": 0.0, "HR": 0.0, "RBI": 4.0, "R": 4.0, "BB": 11.0, "SO": 14.0, "HBP": 2.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 1.0, "CS": 0.0, "SB%": 100.0, "name": "Walks or strikes out"}, {"GP": 15.0, "PA": 33.0, "AB": 26.0, "AVG": 0.115, "OBP": 0.303, "OPS": 0.418, "SLG": 0.115, "H": 3.0, "1B": 3.0, "2B": 0.0, "3B": 0.0, "HR": 0.0, "RBI": 3.0, "R": 4.0, "BB": 6.0, "SO": 18.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 1.0, "CS": 2.0, "SB%": 33.33, "name": "Worst batter"}, {"GP": 17.0, "PA": 45.0, "AB": 37.0, "AVG": 0.27, "OBP": 0.386, "OPS": 0.684, "SLG": 0.297, "H": 10.0, "1B": 9.0, "2B": 1.0, "3B": 0.0, "HR": 0.0, "RBI": 3.0, "R": 5.0, "BB": 7.0, "SO": 11.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 10.0, "CS": 0.0, "SB%": 100.0, "name": "Below par hitter, fast"}, {"GP": 12.0, "PA": 28.0, "AB": 24.0, "AVG": 0.333, "OBP": 0.429, "OPS": 0.762, "SLG": 0.333, "H": 8.0, "1B": 8.0, "2B": 0.0, "3B": 0.0, "HR": 0.0, "RBI": 5.0, "R": 4.0, "BB": 3.0, "SO": 9.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 3.0, "CS": 0.0, "SB%": 100.0, "name": "Unreliable hitter"}, {"GP": 1.0, "PA": 2.0, "AB": 2.0, "AVG": 1.0, "OBP": 1.0, "OPS": 3.0, "SLG": 2.0, "H": 2.0, "1B": 0.0, "2B": 2.0, "3B": 0.0, "HR": 0.0, "RBI": 4.0, "R": 0.0, "BB": 0.0, "SO": 0.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 0.0, "CS": 0.0, "SB%": 0, "name": "ignore (sub)"}, {"GP": 11.0, "PA": 28.0, "AB": 19.0, "AVG": 0.421, "OBP": 0.607, "OPS": 1.239, "SLG": 0.632, "H": 8.0, "1B": 4.0, "2B": 4.0, "3B": 0.0, "HR": 0.0, "RBI": 5.0, "R": 6.0, "BB": 8.0, "SO": 2.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 2.0, "CS": 0.0, "SB%": 100.0, "name": "Basher, 2nd highest OPS but slow"}, {"GP": 14.0, "PA": 45.0, "AB": 31.0, "AVG": 0.387, "OBP": 0.578, "OPS": 1.191, "SLG": 0.613, "H": 12.0, "1B": 5.0, "2B": 7.0, "3B": 0.0, "HR": 0.0, "RBI": 9.0, "R": 16.0, "BB": 12.0, "SO": 9.0, "HBP": 2.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 8.0, "CS": 0.0, "SB%": 100.0, "name": "2nd best hitter"}, {"GP": 15.0, "PA": 46.0, "AB": 38.0, "AVG": 0.5, "OBP": 0.587, "OPS": 1.219, "SLG": 0.632, "H": 19.0, "1B": 14.0, "2B": 5.0, "3B": 0.0, "HR": 0.0, "RBI": 18.0, "R": 16.0, "BB": 8.0, "SO": 2.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 17.0, "CS": 1.0, "SB%": 94.44, "name": "Best hitter"}, {"GP": 14.0, "PA": 38.0, "AB": 30.0, "AVG": 0.267, "OBP": 0.421, "OPS": 0.688, "SLG": 0.267, "H": 8.0, "1B": 8.0, "2B": 0.0, "3B": 0.0, "HR": 0.0, "RBI": 3.0, "R": 8.0, "BB": 8.0, "SO": 6.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 18.0, "CS": 0.0, "SB%": 100.0, "name": "Below par hitter, speed demon"}];
+
+
+let players=[], allImportedPlayers=[], excludedPlayers=[], paCutoff=0, stop=false, lineupLocks={}, activeDataset='Red Sox';
+const statusEl=document.getElementById('status');
+const progEl=document.getElementById('prog');
+const resultsCardEl=document.getElementById('resultsCard');
+
+let lastBestOrder=null, lastTopOptimizedOrders=[], vizPaused=false, vizRunning=false, lastVizRunsForAnimation=0;
+
+function n(x){ if(x==null) return 0; let s=String(x).trim().replace('%',''); if(!s||s==='-')return 0; let v=Number(s); return Number.isFinite(v)?v:0; }
+function c(x){return Math.max(0,Math.min(1,Number.isFinite(x)?x:0));}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function parseCSV(text){let rows=[],row=[],cell='',q=false;for(let i=0;i<text.length;i++){let ch=text[i],nx=text[i+1]; if(ch=='"'&&q&&nx=='"'){cell+='"';i++;} else if(ch=='"') q=!q; else if(ch==','&&!q){row.push(cell);cell='';} else if((ch=='\n'||ch=='\r')&&!q){if(ch=='\r'&&nx=='\n')i++;row.push(cell); if(row.some(v=>String(v).trim()))rows.push(row); row=[];cell='';} else cell+=ch;} row.push(cell); if(row.some(v=>String(v).trim()))rows.push(row); return rows;}
+function findHeaderRow(rows){
+ for(let i=0;i<Math.min(8,rows.length);i++){
+   let r=rows[i].map(x=>String(x).trim());
+   if(r.includes('PA')&&r.includes('H')&&r.includes('BB')) return i;
+ }
+ return 0;
+}
+
+// Converts either a normal batting-only CSV or a full GameChanger export.
+// Full GameChanger files contain Batting, Pitching and Fielding side-by-side,
+// with duplicate headers such as GP/H/BB/SO.  We deliberately keep only the
+// identity columns plus the Batting section so later duplicate headers cannot
+// overwrite batting values.
+function objRows(rows){
+ if(!rows || !rows.length) return [];
+
+ // Detect GameChanger's section-label row (e.g. Batting ... Pitching ... Fielding).
+ let sectionRow=-1, battingCol=-1, nextSectionCol=-1;
+ for(let ri=0;ri<Math.min(5,rows.length);ri++){
+   const vals=rows[ri].map(x=>String(x??'').trim());
+   const bi=vals.findIndex(v=>v.toLowerCase()==='batting');
+   if(bi>=0){
+     sectionRow=ri; battingCol=bi;
+     for(let ci=bi+1;ci<vals.length;ci++){
+       if(vals[ci]){ nextSectionCol=ci; break; }
+     }
+     break;
+   }
+ }
+
+ if(sectionRow>=0 && nextSectionCol>battingCol){
+   // The actual column-header row is normally the next row, but locate it
+   // defensively in case GameChanger inserts another line.
+   let hrow=-1;
+   for(let ri=sectionRow+1;ri<Math.min(sectionRow+5,rows.length);ri++){
+     const slice=rows[ri].slice(0,nextSectionCol).map(x=>String(x??'').trim());
+     if(slice.includes('PA') && slice.includes('H') && slice.includes('BB')){
+       hrow=ri; break;
+     }
+   }
+   if(hrow>=0){
+     const h=rows[hrow].slice(0,nextSectionCol).map(x=>String(x??'').trim());
+     const out=[];
+     for(let ri=hrow+1;ri<rows.length;ri++){
+       const r=rows[ri];
+       const firstCell=String(r[0]??'').trim().toLowerCase();
+       if(firstCell==='totals' || firstCell==='total' || firstCell==='glossary') break;
+
+       const obj=Object.fromEntries(h.map((k,i)=>[k,r[i]??'']));
+       const first=String(obj.First??'').trim();
+       const last=String(obj.Last??'').trim();
+       const name=String(obj.Player??obj.Name??'').trim();
+       const pa=n(obj.PA);
+
+       // Skip blank separator rows and non-player material.
+       if(!(first || last || name) || pa<=0) continue;
+       out.push(obj);
+     }
+     return out;
+   }
+ }
+
+ // Fallback for batting-only CSVs.
+ let hrow=findHeaderRow(rows), h=rows[hrow].map(x=>String(x).trim());
+ return rows.slice(hrow+1)
+   .map(r=>Object.fromEntries(h.map((k,i)=>[k,r[i]??''])))
+   .filter(r=>{
+     const label=String(r.Number??r.Player??r.Name??'').trim().toLowerCase();
+     if(label==='totals'||label==='total'||label==='glossary') return false;
+     return n(r.PA)>0;
+   });
+}
+function get(r,k){return r[k]??r[k+'.1']??0;}
+
+function normalize(raw){
+  const allPlayers = raw.map((r,i)=>{
+    let first=r.First||'', last=r.Last||'', name=(r.name||r.Name||`${first} ${last}`.trim()||`Player ${i+1}`).trim();
+    let p={name};
+    p.Pos = r.Pos || r.POS || r.Position || r.position || '';
+    ['GP','PA','AB','AVG','OBP','OPS','SLG','H','1B','2B','3B','HR','RBI','R','BB','SO','HBP','SAC','SF','ROE','FC','SB','CS'].forEach(k=>p[k]=n(get(r,k)));
+    if(!p.PA) p.PA=Math.max(1,p.AB+p.BB+p.HBP+p.SAC+p.SF);
+    if(!p.H) p.H=p['1B']+p['2B']+p['3B']+p.HR;
+    p.TOB=p.H+p.BB+p.HBP;
+    let attempts=p.SB+p.CS;
+    p.rawSbAttempts = attempts>0 ? attempts : p.SB;
+    p.sbAttempt=c(p.rawSbAttempts/Math.max(1,p.TOB));
+    p.sbSuccess=c(attempts>0?p.SB/attempts:n(document.getElementById('defSb')?.value||.75));
+    p.expectedStealAttemptsPerGame = p.rawSbAttempts / Math.max(1, p.GP || 1);
+    p.eventTable = buildEventTable(p);
+    return p;
+  }).filter(p=>p.name && p.PA>0);
+
+  allImportedPlayers=[...allPlayers];
+  applyEligibilitySetting(false);
+  const maxPA=Math.max(...allImportedPlayers.map(p=>p.PA),0);
+
+  clearAllLocks(); renderPlayers(); renderLocks(); renderLeveragePlayerSelect(); document.getElementById('settings').style.display=''; document.getElementById('playersCard').style.display=''; document.getElementById('validationCard').style.display='';
+ document.getElementById('gameVizCard').style.display=''; document.getElementById('leverageCard').style.display=''; document.getElementById('explainCard').style.display='';
+  document.getElementById('loadMsg').innerHTML=`<p class="ok">Loaded ${allPlayers.length} players. Eligible: ${players.length}. Excluded: ${excludedPlayers.length}. PA leader: ${maxPA}; cutoff: ${paCutoff.toFixed(1)} PA.</p>`;
+}
+
+function applyEligibilitySetting(rerender=true){
+ const ctl=document.getElementById('eligiblePaPct');
+ const pct=Math.max(0,Math.min(1,Number(ctl?.value ?? 0.5)));
+ if(ctl) ctl.value=pct.toFixed(2);
+ const maxPA=Math.max(...allImportedPlayers.map(p=>p.PA),0);
+ paCutoff=maxPA*pct;
+ players=allImportedPlayers.filter(p=>p.PA>=paCutoff);
+ excludedPlayers=allImportedPlayers.filter(p=>p.PA<paCutoff);
+ lastBestOrder=null; lastTopOptimizedOrders=[];
+ clearAllLocks();
+ if(rerender){
+   renderPlayers(); renderLocks(); renderLeveragePlayerSelect();
+   document.getElementById('loadMsg').innerHTML=`<p class="ok">Eligibility updated: ${players.length} eligible, ${excludedPlayers.length} excluded. Cutoff ${paCutoff.toFixed(1)} PA (${(pct*100).toFixed(0)}% of leader).</p>`;
+ }
+}
+function recalc(p){
+ p.TOB=p.H+p.BB+p.HBP; let attempts=p.SB+p.CS; p.rawSbAttempts=attempts>0?attempts:p.SB; p.sbAttempt=c(p.rawSbAttempts/Math.max(1,p.TOB)); p.sbSuccess=c(attempts>0?p.SB/attempts:n(document.getElementById('defSb').value)); p.expectedStealAttemptsPerGame=p.rawSbAttempts/Math.max(1,p.GP||1);
+ p.eventTable=buildEventTable(p);
+}
+
+function renderPlayers(){
+ document.getElementById('eligibilityNote').innerHTML=`<p class="muted">PA eligibility rule: include players with PA ≥ ${paCutoff.toFixed(1)}. Change the percentage in Settings to adjust this cutoff. Current eligible lineup pool: <b>${players.length}</b> players.</p>`;
+ document.getElementById('players').innerHTML=`<table><thead><tr>${['#','Name','Pos','PA','H','1B','2B','3B','HR','BB','HBP','SO','SAC','SF','ROE','FC','SB','CS','SB att/on-base','SB att/game','SB succ','OBP-ish','SLG-ish'].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>`+
+ players.map((p,i)=>`<tr><td>${i+1}</td><td><input data-i="${i}" data-k="name" value="${esc(p.name)}"></td><td><input data-i="${i}" data-k="Pos" value="${esc(p.Pos||'')}"></td>`+
+ ['PA','H','1B','2B','3B','HR','BB','HBP','SO','SAC','SF','ROE','FC','SB','CS'].map(k=>`<td><input type="number" step="1" data-i="${i}" data-k="${k}" value="${p[k]}"></td>`).join('')+
+ `<td>${p.sbAttempt.toFixed(2)}</td><td>${p.expectedStealAttemptsPerGame.toFixed(2)}</td><td><input type="number" min="0" max="1" step=".01" data-i="${i}" data-k="sbSuccess" value="${p.sbSuccess.toFixed(2)}"></td><td>${((p.H+p.BB+p.HBP)/Math.max(1,p.PA)).toFixed(3)}</td><td>${((p['1B']+2*p['2B']+3*p['3B']+4*p.HR)/Math.max(1,p.AB)).toFixed(3)}</td></tr>`).join('')+
+ '</tbody></table>';
+ document.getElementById('excluded').innerHTML = excludedPlayers.length ? `<h3>Excluded low-PA players</h3><p class="muted">These players/subs have fewer than half the PA of the PA leader and are not included in optimizer lineups.</p><table><thead><tr><th>Name</th><th>PA</th></tr></thead><tbody>${excludedPlayers.map(p=>`<tr><td>${esc(p.name)}</td><td>${p.PA}</td></tr>`).join('')}</tbody></table>` : `<p class="muted">No players excluded by the PA rule.</p>`;
+ document.querySelectorAll('#players input').forEach(inp=>inp.onchange=e=>{let i=+e.target.dataset.i,k=e.target.dataset.k; players[i][k]=(k==='name'||k==='Pos')?e.target.value:n(e.target.value); recalc(players[i]); renderPlayers(); renderLocks();});
+}
+
+
+function bestBaseStealer(){
+ const pool=[...players];
+ pool.sort((a,b)=>
+   (b.expectedStealAttemptsPerGame-a.expectedStealAttemptsPerGame) ||
+   (b.SB-a.SB) ||
+   (b.sbAttempt*b.sbSuccess-a.sbAttempt*a.sbSuccess)
+ );
+ return pool[0] || null;
+}
+function setDefaultLocks(){ lineupLocks={}; }
+function clearAllLocks(){ lineupLocks={}; renderLocks(); }
+function renderLocks(){
+ const div=document.getElementById('locks');
+ if(!div || !players.length) return;
+ const opts=(selected)=>`<option value="">No lock</option>`+players.map(p=>`<option value="${esc(p.name)}" ${p.name===selected?'selected':''}>${esc(p.name)}</option>`).join('');
+ div.innerHTML=`<table><thead><tr><th>Slot</th><th>Locked player</th><th>Player quick stats</th></tr></thead><tbody>`+
+   players.map((_,i)=>{
+     const selected=lineupLocks[i]||'';
+     const p=players.find(x=>x.name===selected);
+     const stats=p?`OBP ${statOBP(p).toFixed(3)}, OPS ${statOPS(p).toFixed(3)}, SB ${p.SB}, SB att/game ${p.expectedStealAttemptsPerGame.toFixed(2)}`:'—';
+     return `<tr><td>${i+1}</td><td><select data-slot="${i}" class="lockSelect">${opts(selected)}</select></td><td class="muted">${stats}</td></tr>`;
+   }).join('')+`</tbody></table>`;
+ div.querySelectorAll('.lockSelect').forEach(sel=>sel.onchange=e=>{
+   const slot=+e.target.dataset.slot, name=e.target.value;
+   // A player can only be locked in one slot; moving him clears any previous lock.
+   for(const k of Object.keys(lineupLocks)) if(+k!==slot && lineupLocks[k]===name) delete lineupLocks[k];
+   if(name) lineupLocks[slot]=name; else delete lineupLocks[slot];
+   renderLocks();
+ });
+}
+function applyLocks(order){
+ const n=players.length;
+ let result=Array(n).fill(null), used=new Set();
+ const validNames=new Set(players.map(p=>p.name));
+ for(const [slotStr,name] of Object.entries(lineupLocks)){
+   const slot=+slotStr;
+   if(slot>=0 && slot<n && validNames.has(name) && !used.has(name)){
+     const p=players.find(x=>x.name===name);
+     result[slot]=p; used.add(name);
+   }
+ }
+ const source=[...order, ...players].filter(p=>p && !used.has(p.name));
+ let idx=0;
+ for(let i=0;i<n;i++){
+   if(!result[i]){
+     while(idx<source.length && used.has(source[idx].name)) idx++;
+     if(idx<source.length){result[i]=source[idx]; used.add(source[idx].name); idx++;}
+   }
+ }
+ return result;
+}
+function lockSummary(){
+ const entries=Object.entries(lineupLocks).sort((a,b)=>+a[0]-+b[0]);
+ if(!entries.length) return 'No locked slots.';
+ return entries.map(([slot,name])=>`#${+slot+1}: ${esc(name)}`).join('; ');
+}
+
+function buildEventTable(p){
+ // One plate appearance is a single weighted draw from actual event counts.
+ // This explicitly includes HR as its own event; it is not inferred from OPS/SLG.
+ let pa=Math.max(1,p.PA), used=p.BB+p.HBP+p['1B']+p['2B']+p['3B']+p.HR+p.SO+p.SAC+p.SF+p.ROE+p.FC;
+ let out=Math.max(0,pa-used);
+ let arr=[['BB',p.BB],['HBP',p.HBP],['1B',p['1B']],['2B',p['2B']],['3B',p['3B']],['HR',p.HR],['SO',p.SO],['SAC',p.SAC],['SF',p.SF],['ROE',p.ROE],['FC',p.FC],['OUT',out]];
+ let sum=arr.reduce((a,b)=>a+Math.max(0,b[1]),0)||1;
+ let cum=0;
+ return arr.map(([event,count])=>{ cum += Math.max(0,count)/sum; return {event, cum, prob:Math.max(0,count)/sum}; });
+}
+function probs(p){return (p.eventTable||buildEventTable(p)).map(x=>[x.event,x.prob]);}
+function eventFor(p){let table=p.eventTable||buildEventTable(p), r=Math.random(); for(const x of table){if(r<x.cum)return x.event;} return 'OUT';}
+function forceWalk(b){
+ let runs=0;
+ const r1=b[0]||0, r2=b[1]||0, r3=b[2]||0;
+ if(r1&&r2&&r3) runs++;
+ if(r1&&r2) b[2]=r2;
+ if(r1) b[1]=r1;
+ b[0]=0; // caller places the batter
+ return runs;
+}
+function advance(b,amt){
+ let runs=0;
+ for(let i=2;i>=0;i--){
+   if(!b[i]) continue;
+   const runner=b[i], target=i+amt;
+   b[i]=0;
+   if(target>=3) runs++;
+   else b[target]=runner;
+ }
+ return runs;
+}
+function single(b,set){
+ let runs=0, nb=[0,0,0];
+ if(b[2]) runs++;
+ if(b[1]){
+   if(Math.random()<set.s2single) runs++;
+   else nb[2]=b[1];
+ }
+ if(b[0]){
+   if(Math.random()<set.f1single) nb[2]=b[0];
+   else nb[1]=b[0];
+ }
+ b[0]=nb[0]; b[1]=nb[1]; b[2]=nb[2];
+ return runs;
+}
+function doubleHit(b,set){
+ let runs=0, nb=[0,0,0];
+ if(b[2]) runs++;
+ if(b[1]) runs++;
+ if(b[0]){
+   if(Math.random()<set.s1double) runs++;
+   else nb[2]=b[0];
+ }
+ b[0]=nb[0]; b[1]=nb[1]; b[2]=nb[2];
+ return runs;
+}
+
+function groundOut(b,set,batter=null){
+ let runs=0;
+ // One out is charged by caller. No double plays.
+ if(b[0] && Math.random()<set.gbForce1){
+   b[0]=0; // runner from first is forced out
+   if(b[2] && Math.random()<set.gbScore3){b[2]=0; runs++;}
+   if(b[1] && !b[2] && Math.random()<set.gbAdv2){
+     const r=b[1]; b[1]=0; b[2]=r;
+   }
+   if(batter) b[0]=batter;
+   return runs;
+ }
+ if(b[2] && Math.random()<set.gbScore3){b[2]=0; runs++;}
+ if(b[1] && !b[2] && Math.random()<set.gbAdv2){
+   const r=b[1]; b[1]=0; b[2]=r;
+ }
+ if(b[0] && !b[1] && Math.random()<0.25){
+   const r=b[0]; b[0]=0; b[1]=r;
+ }
+ return runs;
+}
+function flyOut(b,set){
+ let runs=0;
+ if(b[2] && Math.random()<set.sfScore){b[2]=0; runs++;}
+ if(b[1] && !b[2] && Math.random()<set.flyAdv2){
+   const r=b[1]; b[1]=0; b[2]=r;
+ }
+ return runs;
+}
+function battedOut(b,set,batter=null){
+ return Math.random()<set.gbRate ? groundOut(b,set,batter) : flyOut(b,set);
+}
+function fieldersChoice(b,set,batter=null){
+ let runs=0;
+ if(b[0]||b[1]||b[2]){
+   if(Math.random()<set.fcLeadOut){
+     if(b[2]) b[2]=0;
+     else if(b[1]) b[1]=0;
+     else if(b[0]) b[0]=0;
+   } else if(b[0]) b[0]=0;
+   else if(b[1]) b[1]=0;
+   else if(b[2]) b[2]=0;
+
+   if(b[2] && Math.random()<set.fcOtherAdv){b[2]=0; runs++;}
+   if(b[1] && !b[2] && Math.random()<set.fcOtherAdv){
+     const r=b[1]; b[1]=0; b[2]=r;
+   }
+   if(b[0] && !b[1] && Math.random()<set.fcOtherAdv){
+     const r=b[0]; b[0]=0; b[1]=r;
+   }
+ }
+ if(batter) b[0]=batter;
+ return runs;
+}
+function stealWeightForFromBase(from,set){
+ // from=0 means stealing 2nd, from=1 means stealing 3rd, from=2 means stealing home.
+ if(from===0) return Math.max(0, set.sb2Weight ?? 1.00);
+ if(from===1) return Math.max(0, set.sb3Weight ?? 0.55);
+ return Math.max(0, set.sbhWeight ?? 0.15);
+}
+function maybeSteal(b,p,stealState,set){
+ if(!p) return {outs:0,runs:0};
+ const id=p.name;
+ if(!stealState[id]) stealState[id]={attempts:0, successes:0};
+ const st=stealState[id];
+ const expected=Math.max(0, p.expectedStealAttemptsPerGame || 0);
+ if(expected<=0) return {outs:0,runs:0};
+ let outs=0, runs=0;
+ // SB is modeled as bases stolen, not merely “attempts to steal second.”
+ // Frequency comes from attempts per time-on-base, but a player cannot keep
+ // stealing above his average per-game budget. After every attempt, remaining
+ // budget declines, reducing later attempts in the same simulated game.
+ for(let from=0; from<=2; from++){
+   if(!b[from] || b[from]!==p) continue;
+   const to=from+1;
+   if(to<3 && b[to]) break; // cannot steal into an occupied base
+   const remainingBudget=Math.max(0, expected - st.attempts);
+   if(remainingBudget<=0) break;
+   const budgetFactor=Math.min(1, remainingBudget);
+   const baseWeight=stealWeightForFromBase(from,set);
+   const attemptProb=Math.min(1, p.sbAttempt * budgetFactor * baseWeight);
+   if(Math.random()>=attemptProb) break;
+   st.attempts++;
+   if(Math.random()<p.sbSuccess){
+     b[from]=0;
+     st.successes++;
+     if(to>=3){ runs++; break; }
+     b[to]=p;
+   } else {
+     b[from]=0;
+     outs++;
+     break;
+   }
+ }
+ return {outs,runs};
+}
+function wp(b,rate){return Math.random()<rate?advance(b,1):0;}
+
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+function offensiveInningsForGame(set){
+  const nominal=Math.max(1,Math.floor(Number(set.innings)||7));
+  const fullPct=clamp(Number(set.fullInningPct ?? 1),0,1);
+  const winPct=clamp(Number(set.winPct ?? 0.5),0,1);
+  let inningsPlayed=Math.random()<fullPct ? nominal : Math.max(1,nominal-1);
+  if(set.homeAway==='home' && Math.random()<winPct) inningsPlayed=Math.max(0,inningsPlayed-1);
+  return inningsPlayed;
+}
+
+function game(order,set){
+ let runs=0,outs=0,inn=1,bi=0,b=[0,0,0],batters=0, stealState={},gameInnings=offensiveInningsForGame(set);
+ while(inn<=gameInnings){
+   let p=order[bi%order.length]; bi++; batters++;
+   runs+=wp(b,set.wpRate);
+   let e=eventFor(p);
+   if(e==='BB'||e==='HBP'){runs+=forceWalk(b); b[0]=p; {const sr=maybeSteal(b,p,stealState,set); outs+=sr.outs; runs+=sr.runs;}}
+   else if(e==='1B'){runs+=single(b,set); b[0]=p; {const sr=maybeSteal(b,p,stealState,set); outs+=sr.outs; runs+=sr.runs;}}
+   else if(e==='2B'){runs+=doubleHit(b,set); b[1]=p; {const sr=maybeSteal(b,p,stealState,set); outs+=sr.outs; runs+=sr.runs;}}
+   else if(e==='3B'){runs+=advance(b,3); b[2]=p; {const sr=maybeSteal(b,p,stealState,set); outs+=sr.outs; runs+=sr.runs;}}
+   else if(e==='HR'){runs+=advance(b,4)+1;}
+   else if(e==='ROE'){runs+=forceWalk(b); b[0]=p; {const sr=maybeSteal(b,p,stealState,set); outs+=sr.outs; runs+=sr.runs;}}
+   else if(e==='SAC'){outs++; if(outs<3)runs+=groundOut(b,set);}
+   else if(e==='SF'){outs++; if(outs<3)runs+=flyOut(b,set);}
+   else if(e==='FC'){outs++; if(outs<3)runs+=fieldersChoice(b,set,p);} 
+   else if(e==='OUT'){outs++; if(outs<3)runs+=battedOut(b,set,p);}
+   else outs++;
+   if(outs>=3){inn++;outs=0;b=[0,0,0];}
+ }
+ return runs;
+}
+
+function evalLineup(order,set){let t=0;for(let i=0;i<set.sims;i++)t+=game(order,set);return t/set.sims;}
+function key(o){return o.map(p=>p.name).join('|');}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function rate(p){return (p.H+p.BB+p.HBP)/Math.max(1,p.PA);}
+function statOBP(p){const v=Number(p?.OBP);return Number.isFinite(v)?v:rate(p);}
+function statOPS(p){const v=Number(p?.OPS);return Number.isFinite(v)?v:ops(p);}
+function slug(p){return (p['1B']+2*p['2B']+3*p['3B']+4*p.HR)/Math.max(1,p.AB);}
+function ops(p){return rate(p)+slug(p);}
+function speed(p){return p.sbAttempt*p.sbSuccess;}
+function addSeeds(add){
+ let byOBP=[...players].sort((a,b)=>statOBP(b)-statOBP(a)), bySLG=[...players].sort((a,b)=>slug(b)-slug(a)), byOPS=[...players].sort((a,b)=>statOPS(b)-statOPS(a)), bySpeed=[...players].sort((a,b)=>speed(b)-speed(a));
+ add(players); add(byOBP); add(byOPS); add(bySLG); add(bySpeed);
+ // common baseball construction: OBP/speed at top, power 3-5, lower OBP later, second leadoff near 9
+ let power=byOPS.slice(0,3);
+ let mix=[byOBP[0],byOBP[1],power[0],power[1],power[2],...byOBP.slice(2).filter(p=>!power.includes(p))].filter(Boolean);
+ add([...new Set(mix)]);
+ let speedTop=[bySpeed[0],byOBP[0],byOPS[0],byOPS[1],byOBP[1],...byOBP.filter(p=>![bySpeed[0],byOBP[0],byOPS[0],byOPS[1],byOBP[1]].includes(p))].filter(Boolean);
+ add([...new Set(speedTop)]);
+ let rev=[...byOBP].reverse(); add(rev);
+}
+function candidates(){
+ let mode=document.getElementById('mode').value, max=+document.getElementById('cands').value, out=[],seen=new Set();
+ let add=o=>{o=applyLocks(o.filter(Boolean)); if(o.length!==players.length)return; let k=key(o); if(!seen.has(k)){seen.add(k);out.push(o);}};
+ addSeeds(add);
+ if(mode==='current') return [applyLocks(players)];
+ if(mode==='all' && players.length<=9){out=[];seen=new Set(); perm(players,0,add); return out;}
+ while(out.length<max) add(shuffle(players));
+ return out;
+}
+function perm(a,s,add){if(s===a.length)return add([...a]); for(let i=s;i<a.length;i++){[a[s],a[i]]=[a[i],a[s]];perm(a,s+1,add);[a[s],a[i]]=[a[i],a[s]];}}
+function mutate(order){
+ let a=[...order], r=Math.random();
+ if(r<0.55){let i=Math.floor(Math.random()*a.length),j=Math.floor(Math.random()*a.length); [a[i],a[j]]=[a[j],a[i]];}
+ else if(r<0.85){let i=Math.floor(Math.random()*a.length),j=Math.floor(Math.random()*a.length); let [x]=a.splice(i,1); a.splice(j,0,x);}
+ else {let i=Math.floor(Math.random()*(a.length-1)); [a[i],a[i+1]]=[a[i+1],a[i]];}
+ return applyLocks(a);
+}
+function crossover(a,b){
+ let n=a.length, i=Math.floor(Math.random()*n), j=Math.floor(Math.random()*n); if(i>j)[i,j]=[j,i];
+ let child=Array(n).fill(null), used=new Set();
+ for(let k=i;k<=j;k++){child[k]=a[k]; used.add(a[k].name);}
+ let pos=(j+1)%n;
+ for(let k=0;k<n;k++){
+   let p=b[(j+1+k)%n];
+   if(!used.has(p.name)){child[pos]=p; used.add(p.name); pos=(pos+1)%n;}
+ }
+ return applyLocks(child);
+}
+
+function isLockedSlot(i){return Object.prototype.hasOwnProperty.call(lineupLocks,String(i));}
+function safeApplyLocksForOrder(order, locks){ const saved=lineupLocks; lineupLocks=locks||lineupLocks; const out=applyLocks(order); lineupLocks=saved; return out; }
+function evalLineupDistribution(order,set,simsOverride){
+ const n=Math.max(1, simsOverride||set.sims||1000); let vals=[], sum=0, sumsq=0;
+ const old=set.sims; set.sims=1;
+ for(let i=0;i<n;i++){ const r=game(order,set); vals.push(r); sum+=r; sumsq+=r*r; }
+ set.sims=old;
+ const mean=sum/n; const variance=Math.max(0,(sumsq/n)-mean*mean); const sd=Math.sqrt(variance); const se=sd/Math.sqrt(n);
+ return {avg:mean,sd,se,ci95:1.96*se,n};
+}
+
+
+
+function baseKeyToVizPos(key){
+  if(key==='home') return VIZ_POS.plate;
+  return VIZ_POS[key] || null;
+}
+function getRunnerElementByName(name){
+  if(!name) return null;
+  return [...document.querySelectorAll('#runnerLayer .runner')]
+    .find(el=>el.dataset.name===name) || null;
+}
+async function moveRunnerSegment(el,fromKey,toKey,duration=420){
+  if(!el) return;
+  const layer=document.getElementById('runnerLayer');
+  const target=baseKeyToVizPos(toKey);
+  if(!layer || !target) return;
+
+  // Use the same percentage coordinates used by renderVizRunners.
+  // This makes 3rd -> home identical in mechanism to every other base leg.
+  el.style.transition=`left ${duration}ms linear, top ${duration}ms linear, opacity .2s ease`;
+  el.style.left=target[0]+'%';
+  el.style.top=target[1]+'%';
+  await new Promise(r=>setTimeout(r,duration+25));
+}
+async function animateRunnerPath(runnerName,path,duration=420){
+  const el=getRunnerElementByName(runnerName);
+  if(!el || !Array.isArray(path) || path.length<2) return;
+  for(let i=1;i<path.length;i++){
+    await moveRunnerSegment(el,path[i-1],path[i],duration);
+  }
+}
+
+function flashRunScored(){
+  const ind=document.getElementById('vizRunIndicator');
+  const score=document.getElementById('vizScore');
+  if(ind){
+    ind.classList.remove('runFlash');
+    void ind.offsetWidth;
+    ind.classList.add('runFlash');
+    setTimeout(()=>ind.classList.remove('runFlash'),700);
+  }
+  if(score){
+    score.classList.remove('runPulse');
+    void score.offsetWidth;
+    score.classList.add('runPulse');
+    setTimeout(()=>score.classList.remove('runPulse'),350);
+  }
+}
+
+
+function runnerNameOf(r){
+  return (r&&typeof r==='object'&&r.name)?r.name:(typeof r==='string'?r:null);
+}
+function baseIndexForRunner(b,name){
+  for(let i=0;i<3;i++) if(runnerNameOf(b[i])===name) return i;
+  return -1;
+}
+async function animateRunnerByIndices(name,fromIdx,toIdx,duration=380){
+  const circuit=['home','first','second','third','home'];
+  const start=fromIdx+1; // base 0-> circuit index1
+  const end=(toIdx>=3)?4:(toIdx+1);
+  if(end<=start) return;
+  await animateRunnerPath(name,circuit.slice(start,end+1),duration);
+}
+async function animateBatterResult(batter,eventCode,duration=380){
+  if(!batter?.name) return;
+  const code=String(eventCode||'').toUpperCase();
+  let path=null;
+  if(code==='1B'||code==='BB'||code==='HBP'||code==='E'||code.startsWith('FC')) path=['home','first'];
+  else if(code==='2B') path=['home','first','second'];
+  else if(code==='3B') path=['home','first','second','third'];
+  else if(code==='HR') path=['home','first','second','third','home'];
+  if(path) await animateRunnerPath(batter.name,path,duration);
+}
+async function animateBaseTransition(beforeBases,afterBases,batter,eventCode,runsScored=0){
+  const beforeNames=[0,1,2].map(i=>runnerNameOf(beforeBases[i]));
+  const afterNames=[0,1,2].map(i=>runnerNameOf(afterBases[i]));
+
+  // Determine which pre-existing runners scored. A disappeared runner is only
+  // treated as scoring when this play actually added a run.
+  let existingRuns=runsScored;
+  if(String(eventCode||'').toUpperCase()==='HR') existingRuns=Math.max(0,existingRuns-1);
+  const disappeared=[];
+  for(let i=2;i>=0;i--){
+    const name=beforeNames[i];
+    if(name && !afterNames.includes(name)) disappeared.push({name,from:i});
+  }
+  const scorers=new Set(disappeared.slice(0,existingRuns).map(x=>x.name));
+
+  // Animate existing runners, starting with the lead runner.
+  for(let from=2;from>=0;from--){
+    const name=beforeNames[from];
+    if(!name) continue;
+    const to=afterNames.indexOf(name);
+    if(to>from){
+      await animateRunnerByIndices(name,from,to,380);
+    } else if(to===-1 && scorers.has(name)){
+      await animateRunnerByIndices(name,from,3,380); // 3 means home
+      flashRunScored();
+    }
+    // Disappeared runners who did not score are outs: no fake trip home.
+  }
+
+  // Batter movement uses the same segment animator.
+  await animateBatterResult(batter,eventCode,380);
+}
+async function animateStealMovement(runner,from,to,success){
+  if(!runner?.name) return;
+  if(success){
+    await animateRunnerByIndices(runner.name,from,to>=3?3:to,420);
+    if(to>=3) flashRunScored();
+  }
+  // On caught stealing, runner remains visually at origin until removed on redraw.
+}
+
+async function localSwapImprove(startOrder,set,progressCb,maxPasses=3){
+ let best=applyLocks(startOrder), bestAvg=evalLineup(best,set), improved=true, pass=0;
+ while(improved && pass<maxPasses && !stop){
+   improved=false; pass++;
+   for(let i=0;i<best.length;i++) for(let j=i+1;j<best.length;j++){
+     if(isLockedSlot(i)||isLockedSlot(j)) continue;
+     const cand=[...best]; [cand[i],cand[j]]=[cand[j],cand[i]];
+     const locked=applyLocks(cand); const avg=evalLineup(locked,set);
+     if(avg>bestAvg+0.0001){best=locked; bestAvg=avg; improved=true; if(progressCb)progressCb(pass,bestAvg,best); await new Promise(r=>setTimeout(r,0));}
+     if(stop) break;
+   }
+ }
+ return {order:best,avg:bestAvg,label:'GA + local swap'};
+}
+async function geneticSearch(set){
+ const budget=Math.max(50,+document.getElementById('cands').value||5000);
+ const popSize=Math.min(120,Math.max(24,Math.floor(Math.sqrt(budget)*2)));
+ const eliteCount=Math.max(4,Math.floor(popSize*0.18));
+ const generations=Math.max(1,Math.floor(budget/popSize));
+ let seen=new Set(), population=[];
+ const add=o=>{o=applyLocks(o.filter(Boolean)); if(o.length!==players.length)return false; let k=key(o); if(seen.has(k))return false; seen.add(k); population.push({order:o,avg:null}); return true;};
+ addSeeds(add);
+ while(population.length<popSize) add(shuffle(players));
+ let allResults=[];
+ for(let gen=0; gen<generations && !stop; gen++){
+   for(const item of population){ if(item.avg==null) item.avg=evalLineup(item.order,set); }
+   population.sort((a,b)=>b.avg-a.avg);
+   allResults.push(...population); allResults.sort((a,b)=>b.avg-a.avg); allResults=uniqueResults(allResults).slice(0,60);
+   showTop5SoFar(allResults,`GA generation ${gen+1} / ${generations}`);
+
+   let best=allResults[0];
+   progEl.style.width=(100*(gen+1)/generations)+'%';
+   statusEl.innerHTML=`<p>GA generation ${gen+1} / ${generations}. Population ${popSize}. Best: ${best.avg.toFixed(3)} runs/game. The best five lineups found so far are displayed below and updated once per generation.</p>`;
+   await new Promise(r=>setTimeout(r,0));
+   let elites=population.slice(0,eliteCount);
+   let next=elites.map(x=>({order:x.order,avg:x.avg}));
+   let nextKeys=new Set(next.map(x=>key(x.order)));
+   function pick(){
+     // tournament selection: sample from better half, keep the best of three
+     let pool=population.slice(0,Math.max(eliteCount*2,Math.floor(population.length*0.55)));
+     let best=null;
+     for(let t=0;t<3;t++){let cand=pool[Math.floor(Math.random()*pool.length)]; if(!best||cand.avg>best.avg)best=cand;}
+     return best.order;
+   }
+   while(next.length<popSize){
+     let child=Math.random()<0.75?crossover(pick(),pick()):shuffle(players);
+     if(Math.random()<0.85) child=mutate(child);
+     if(Math.random()<0.25) child=mutate(child);
+     let k=key(child);
+     if(!nextKeys.has(k)){nextKeys.add(k); next.push({order:child,avg:null});}
+   }
+   population=next;
+ }
+ return uniqueResults(allResults).sort((a,b)=>b.avg-a.avg);
+}
+function uniqueResults(arr){let seen=new Set(), out=[]; for(const r of arr){let k=key(r.order); if(!seen.has(k)){seen.add(k);out.push(r);}} return out;}
+
+async function randomOrderBaseline(set,count){
+  count=Math.max(1,Math.floor(count||50));
+  let vals=[], seen=new Set(), representative=null, repDist=Infinity;
+  for(let i=0;i<count&&!stop;i++){
+    let order, k, tries=0;
+    do{
+      order=applyLocks(shuffle([...players]));
+      k=key(order);
+      tries++;
+    }while(seen.has(k)&&tries<25);
+    seen.add(k);
+    showCurrentTestLineup(order,`Random order ${i+1} of ${count}`);
+    const avg=evalLineup(order,set);
+    vals.push({avg,order:[...order]});
+    if(i%10===0){
+      statusEl.innerHTML=`<p>Random baseline: tested ${i+1} / ${count} shuffled orders...</p>`;
+      await new Promise(r=>setTimeout(r,0));
+    }
+  }
+  if(!vals.length) return {label:'Random-order average',avg:0,count:0,sd:0,order:null};
+  const mean=vals.reduce((s,x)=>s+x.avg,0)/vals.length;
+  const sd=Math.sqrt(vals.reduce((s,x)=>s+(x.avg-mean)**2,0)/vals.length);
+  for(const x of vals){
+    const d=Math.abs(x.avg-mean);
+    if(d<repDist){repDist=d;representative=x.order;}
+  }
+  return {label:'Random-order average',avg:mean,count:vals.length,sd,order:representative};
+}
+
+
+function showCurrentTestLineup(order,label=''){
+ const box=document.getElementById('currentTestLineup'), txt=document.getElementById('currentTestLineupText');
+ if(!box||!txt||!order||!order.length)return;
+ box.style.display='block';
+ txt.textContent=(label?label+' — ':'')+order.map((p,i)=>`${i+1}. ${p.name}`).join('  •  ');
+}
+
+function showTop5SoFar(results,label=''){
+ const box=document.getElementById('currentTestLineup'), txt=document.getElementById('currentTestLineupText');
+ if(!box||!txt)return;
+ const top=uniqueResults((results||[]).filter(r=>r&&r.order&&Number.isFinite(r.avg)))
+   .sort((a,b)=>b.avg-a.avg).slice(0,5);
+ if(!top.length)return;
+ box.style.display='block';
+
+ const maxRows=Math.max(...top.map(r=>r.order.length));
+ let h=`${label?`<div style="margin-bottom:10px"><b>${esc(label)}</b></div>`:''}
+ <div style="overflow-x:auto">
+ <table style="width:100%;border-collapse:collapse;min-width:760px;text-align:left">
+ <thead><tr>
+ <th style="padding:7px;border-bottom:2px solid #ccc;width:55px">Spot</th>`;
+ for(let i=0;i<top.length;i++){
+   h+=`<th style="padding:7px;border-bottom:2px solid #ccc">Lineup #${i+1}<br><span class="muted" style="font-weight:normal">${top[i].avg.toFixed(3)} RPG</span></th>`;
+ }
+ h+=`</tr></thead><tbody>`;
+ for(let spot=0;spot<maxRows;spot++){
+   h+=`<tr><td style="padding:6px 7px;border-bottom:1px solid #eee"><b>${spot+1}</b></td>`;
+   for(let i=0;i<top.length;i++){
+     const p=top[i].order[spot];
+     h+=`<td style="padding:6px 7px;border-bottom:1px solid #eee">${p?esc(p.name):'—'}</td>`;
+   }
+   h+=`</tr>`;
+ }
+ h+=`</tbody></table></div>`;
+ txt.innerHTML=h;
+}
+async function showCurrentTestLineupAndPaint(order,label=''){
+ showCurrentTestLineup(order,label);
+ // Wait for a browser animation frame so the newly displayed lineup is
+ // actually painted before its simulations begin.
+ await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
+}
+function renderPositionDistribution(top){
+ const card=document.getElementById('positionDistributionCard'), root=document.getElementById('positionDistribution');
+ const rows=uniqueResults((top||[]).filter(r=>r&&r.order&&Number.isFinite(r.avg))).sort((a,b)=>b.avg-a.avg).slice(0,30);
+ if(!rows.length){card.style.display='none';root.innerHTML='';return;}
+
+ const slots=Math.max(...rows.map(r=>r.order.length)), counts=new Map(), names=[];
+ for(const r of rows){
+   r.order.forEach((p,s)=>{
+     if(!p)return;
+     if(!counts.has(p.name)){counts.set(p.name,Array(slots).fill(0));names.push(p.name);}
+     counts.get(p.name)[s]++;
+   });
+ }
+
+ const maxCount=Math.max(1,...[...counts.values()].flat());
+ let h=`<p class="muted">Based on ${rows.length} unique top lineups. Each player has a separate chart; bar height is the number of those lineups in which the player bats in that slot.</p>`;
+ h+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px">`;
+
+ for(const name of names){
+   const arr=counts.get(name);
+   h+=`<div style="border:1px solid #ddd;border-radius:10px;padding:12px">
+     <div style="font-weight:700;margin-bottom:8px">${esc(name)}</div>
+     <div style="height:190px;display:flex;align-items:flex-end;gap:5px;border-left:1px solid #aaa;border-bottom:1px solid #aaa;padding:8px 8px 0 8px">`;
+
+   for(let s=0;s<slots;s++){
+     const c=arr[s];
+     const pct=100*c/maxCount;
+     h+=`<div style="flex:1;min-width:20px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center">
+       <div style="font-size:11px;font-weight:700;margin-bottom:3px">${c}</div>
+       <div title="Slot ${s+1}: ${c}" style="width:78%;max-width:34px;height:${pct}%;min-height:${c?3:0}px;background:#777;border-radius:3px 3px 0 0"></div>
+       <div style="font-size:11px;margin-top:5px">${s+1}</div>
+     </div>`;
+   }
+   h+=`</div><div class="muted" style="text-align:center;font-size:11px;margin-top:5px">Batting position</div></div>`;
+ }
+ h+=`</div>`;
+ root.innerHTML=h;
+ card.style.display='';
+}
+async function run(){
+ stop=false;
+ document.getElementById('currentTestLineup').style.display='none';
+ statusEl.innerHTML='<p><b>Optimizer started…</b></p>';
+ progEl.style.width='1%';
+ resultsCardEl.style.display='none';
+ let set={innings:+document.getElementById('innings').value,fullInningPct:clamp(+document.getElementById('fullInningPct').value,0,1),homeAway:document.getElementById('homeAway').value,winPct:clamp(+document.getElementById('winPct').value,0,1),sims:+document.getElementById('sims').value,wpRate:1/Math.max(1,+document.getElementById('wpEvery').value),s2single:+document.getElementById('s2single').value,s1double:+document.getElementById('s1double').value,f1single:+document.getElementById('f1single').value,sfScore:+document.getElementById('sfScore').value,gbRate:+document.getElementById('gbRate').value,gbScore3:+document.getElementById('gbScore3').value,gbAdv2:+document.getElementById('gbAdv2').value,gbForce1:+document.getElementById('gbForce1').value,flyAdv2:+document.getElementById('flyAdv2').value,fcLeadOut:+document.getElementById('fcLeadOut').value,fcOtherAdv:+document.getElementById('fcOtherAdv').value,sb2Weight:+document.getElementById('sb2Weight').value,sb3Weight:+document.getElementById('sb3Weight').value,sbhWeight:+document.getElementById('sbhWeight').value};
+ let obpOrder=applyLocks([...players].sort((a,b)=>statOBP(b)-statOBP(a)));
+ let opsOrder=applyLocks([...players].sort((a,b)=>statOPS(b)-statOPS(a)));
+ let reverseObpOrder=applyLocks([...players].sort((a,b)=>statOBP(a)-statOBP(b)));
+ let reverseOpsOrder=applyLocks([...players].sort((a,b)=>statOPS(a)-statOPS(b)));
+ let randomCount=Math.max(5,Math.floor(+document.getElementById('randomBaselineOrders').value||50));
+
+ statusEl.innerHTML=`<p>Running ${randomCount} random-order baselines, plus OBP, OPS, reverse OBP, and reverse OPS...</p>`;
+ await new Promise(r=>setTimeout(r,0));
+
+ let randomBaseline=await randomOrderBaseline(set,randomCount);
+ let obpBaseline={label:'OBP order',avg:evalLineup(obpOrder,set),order:obpOrder};
+ let opsBaseline={label:'OPS order',avg:evalLineup(opsOrder,set),order:opsOrder};
+ let reverseObpBaseline={label:'Reverse OBP order',avg:evalLineup(reverseObpOrder,set),order:reverseObpOrder};
+ let reverseOpsBaseline={label:'Reverse OPS order',avg:evalLineup(reverseOpsOrder,set),order:reverseOpsOrder};
+
+ let mode=document.getElementById('mode').value, res=[];
+ if(mode==='ga'){
+   statusEl.innerHTML=`<p>Random avg: ${randomBaseline.avg.toFixed(3)}. OBP: ${obpBaseline.avg.toFixed(3)}. OPS: ${opsBaseline.avg.toFixed(3)}. Starting genetic algorithm...</p>`;
+   res=await geneticSearch(set);
+   if(res.length){
+     statusEl.innerHTML=`<p>GA complete. Running local pairwise-swap hill climb from best lineup...</p>`;
+     const polished=await localSwapImprove(res[0].order,set,(pass,avg)=>{statusEl.innerHTML=`<p>Local swap pass ${pass}: best ${avg.toFixed(3)} runs/game.</p>`;});
+     res.push(polished);
+   }
+ } else {
+   let cand=candidates(), best=null;
+   statusEl.innerHTML=`<p>Random avg: ${randomBaseline.avg.toFixed(3)}. Testing ${cand.length.toLocaleString()} lineups × ${set.sims.toLocaleString()} games each...</p>`;   for(let i=0;i<cand.length;i++){
+     if(stop)break;
+     showCurrentTestLineup(cand[i],`Lineup ${i+1} of ${cand.length}`);
+     let avg=evalLineup(cand[i],set), r={avg,order:cand[i]};
+     res.push(r);
+     if(!best||avg>best.avg)best=r;
+     if(i%20===0){
+       progEl.style.width=(100*(i+1)/cand.length)+'%';
+       statusEl.innerHTML=`<p>Random avg: ${randomBaseline.avg.toFixed(3)}. Tested ${(i+1).toLocaleString()} / ${cand.length.toLocaleString()}. Best: ${best.avg.toFixed(3)} runs/game.</p>`;
+       await new Promise(r=>setTimeout(r,0));
+     }
+   }
+ }
+ res.push(obpBaseline,opsBaseline,reverseObpBaseline,reverseOpsBaseline);
+ res=uniqueResults(res).sort((a,b)=>b.avg-a.avg);
+ show(res.slice(0,30),stop,obpBaseline,opsBaseline,reverseObpBaseline,reverseOpsBaseline,randomBaseline,mode);
+}
+function signed(x){return `${x>=0?'+':''}${x.toFixed(3)}`;}
+function signedPct(x){return `${x>=0?'+':''}${x.toFixed(1)}%`;}
+function show(top,stopped,obpBaseline,opsBaseline,reverseObpBaseline,reverseOpsBaseline,randomBaseline,mode){
+ resultsCardEl.style.display=''; progEl.style.width='100%';
+ const baselineLabels=new Set(['OBP order','OPS order','Reverse OBP order','Reverse OPS order']);
+ let b=top.find(r=>!baselineLabels.has(r.label)) || top[0];
+ lastBestOrder=b&&b.order?[...b.order]:null;
+ const _baselineLabels=new Set(['OBP order','OPS order','Reverse OBP order','Reverse OPS order']);
+ lastTopOptimizedOrders=top
+   .filter(r=>r&&r.order&&!_baselineLabels.has(r.label))
+   .slice(0,10)
+   .map(r=>({order:[...r.order],avg:r.avg,label:r.label||'Optimized'}));
+ updateVizLineupOptions();
+
+ let diffRandom=b.avg-randomBaseline.avg, pctRandom=randomBaseline.avg?100*diffRandom/randomBaseline.avg:0;
+ let diffObp=b.avg-obpBaseline.avg, pctObp=obpBaseline.avg?100*diffObp/obpBaseline.avg:0;
+ let diffOps=b.avg-opsBaseline.avg, pctOps=opsBaseline.avg?100*diffOps/opsBaseline.avg:0;
+ let diffRevObp=b.avg-reverseObpBaseline.avg, pctRevObp=reverseObpBaseline.avg?100*diffRevObp/reverseObpBaseline.avg:0;
+ let diffRevOps=b.avg-reverseOpsBaseline.avg, pctRevOps=reverseOpsBaseline.avg?100*diffRevOps/reverseOpsBaseline.avg:0;
+ let rankObp=top.findIndex(r=>key(r.order)===key(obpBaseline.order));
+ let rankOps=top.findIndex(r=>key(r.order)===key(opsBaseline.order));
+ let rankRevObp=top.findIndex(r=>key(r.order)===key(reverseObpBaseline.order));
+ let rankRevOps=top.findIndex(r=>key(r.order)===key(reverseOpsBaseline.order));
+ let method=mode==='ga'?'Genetic algorithm':(mode==='smart'?'Smart/random search':mode);
+ summary.innerHTML=`<p class="ok">${stopped?'Stopped early. ':''}Best: ${b.avg.toFixed(3)} runs/game using ${method}</p>
+ <p><b>Locked slots:</b> ${lockSummary()}</p>
+ <table><thead><tr><th>Lineup</th><th>Runs/game</th><th>Best advantage</th><th>Rank shown</th></tr></thead><tbody>
+ <tr><td>Best optimized</td><td>${b.avg.toFixed(3)}</td><td>—</td><td>1</td></tr>
+ <tr><td>Random-order average (${randomBaseline.count} orders)</td><td>${randomBaseline.avg.toFixed(3)}</td><td>${signed(diffRandom)} (${signedPct(pctRandom)})</td><td>baseline average</td></tr>
+ <tr><td>OBP order</td><td>${obpBaseline.avg.toFixed(3)}</td><td>${signed(diffObp)} (${signedPct(pctObp)})</td><td>${rankObp>=0?rankObp+1:'not in top '+top.length}</td></tr>
+ <tr><td>OPS order</td><td>${opsBaseline.avg.toFixed(3)}</td><td>${signed(diffOps)} (${signedPct(pctOps)})</td><td>${rankOps>=0?rankOps+1:'not in top '+top.length}</td></tr>
+ <tr><td>Reverse OBP order</td><td>${reverseObpBaseline.avg.toFixed(3)}</td><td>${signed(diffRevObp)} (${signedPct(pctRevObp)})</td><td>${rankRevObp>=0?rankRevObp+1:'not in top '+top.length}</td></tr>
+ <tr><td>Reverse OPS order</td><td>${reverseOpsBaseline.avg.toFixed(3)}</td><td>${signed(diffRevOps)} (${signedPct(pctRevOps)})</td><td>${rankRevOps>=0?rankRevOps+1:'not in top '+top.length}</td></tr>
+ </tbody></table>
+ <p><b>Random-order baseline:</b> ${randomBaseline.avg.toFixed(3)} runs/game averaged across ${randomBaseline.count} shuffled orders; SD across order means ${randomBaseline.sd.toFixed(3)}.</p>
+ <p><b>OBP order:</b> ${obpBaseline.order.map(p=>esc(p.name)).join(' → ')}</p>
+ <p><b>OPS order:</b> ${opsBaseline.order.map(p=>esc(p.name)).join(' → ')}</p>
+ <p><b>Reverse OBP order:</b> ${reverseObpBaseline.order.map(p=>esc(p.name)).join(' → ')}</p>
+ <p><b>Reverse OPS order:</b> ${reverseOpsBaseline.order.map(p=>esc(p.name)).join(' → ')}</p>
+ <h3>Best optimized order</h3>
+ <ol>${b.order.map(p=>`<li>${esc(p.name)} <span class="muted">(OBP ${statOBP(p).toFixed(3)}, SLG-ish ${slug(p).toFixed(3)}, OPS ${statOPS(p).toFixed(3)}, SB att/on-base ${p.sbAttempt.toFixed(2)}, SB att/game ${p.expectedStealAttemptsPerGame.toFixed(2)}, SB succ ${p.sbSuccess.toFixed(2)})</span></li>`).join('')}</ol>`;
+ results.innerHTML='<table><thead><tr><th>Rank</th><th>Type</th><th>Runs/game</th><th>Vs Random Avg</th><th>Vs OBP</th><th>Vs OPS</th><th>Vs Rev OBP</th><th>Vs Rev OPS</th><th>Lineup</th></tr></thead><tbody>'+top.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.label||'Candidate')}</td><td>${r.avg.toFixed(3)}</td><td>${signed(r.avg-randomBaseline.avg)}</td><td>${signed(r.avg-obpBaseline.avg)}</td><td>${signed(r.avg-opsBaseline.avg)}</td><td>${signed(r.avg-reverseObpBaseline.avg)}</td><td>${signed(r.avg-reverseOpsBaseline.avg)}</td><td>${r.order.map(p=>esc(p.name)).join(' → ')}</td></tr>`).join('')+'</tbody></table>';
+ renderPositionDistribution(top);
+ statusEl.innerHTML='<p class="ok">Done.</p>';
+}
+
+
+function renderLeveragePlayerSelect(){
+ const sel=document.getElementById('leveragePlayer');
+ if(!sel || !players.length) return;
+ const current=sel.value;
+ sel.innerHTML=players.map(p=>`<option value="${esc(p.name)}" ${p.name===current?'selected':''}>${esc(p.name)}</option>`).join('');
+ const best=bestBaseStealer();
+ if(!current && best) sel.value=best.name;
+}
+function applySpecificLocks(order, locks){
+ const saved=lineupLocks;
+ lineupLocks=locks;
+ const out=applyLocks(order);
+ lineupLocks=saved;
+ return out;
+}
+function addSeedsWithLocks(add, locks){
+ let byOBP=[...players].sort((a,b)=>statOBP(b)-statOBP(a));
+ let bySLG=[...players].sort((a,b)=>slug(b)-slug(a));
+ let byOPS=[...players].sort((a,b)=>statOPS(b)-statOPS(a));
+ let bySpeed=[...players].sort((a,b)=>speed(b)-speed(a));
+ [players,byOBP,byOPS,bySLG,bySpeed].forEach(o=>add(applySpecificLocks(o,locks)));
+ let power=byOPS.slice(0,3);
+ let mix=[byOBP[0],byOBP[1],power[0],power[1],power[2],...byOBP.slice(2).filter(p=>!power.includes(p))].filter(Boolean);
+ add(applySpecificLocks([...new Set(mix)],locks));
+ let speedTop=[bySpeed[0],byOBP[0],byOPS[0],byOPS[1],byOBP[1],...byOBP.filter(p=>![bySpeed[0],byOBP[0],byOPS[0],byOPS[1],byOBP[1]].includes(p))].filter(Boolean);
+ add(applySpecificLocks([...new Set(speedTop)],locks));
+}
+function mutateWithLocks(order, locks){
+ const saved=lineupLocks; lineupLocks=locks; const out=mutate(order); lineupLocks=saved; return out;
+}
+function crossoverWithLocks(a,b,locks){
+ const saved=lineupLocks; lineupLocks=locks; const out=crossover(a,b); lineupLocks=saved; return out;
+}
+function shuffleWithLocks(locks){ return applySpecificLocks(shuffle(players),locks); }
+async function geneticSearchForLocks(set, locks, budget, progressCb){
+ const popSize=Math.min(90,Math.max(18,Math.floor(Math.sqrt(budget)*2)));
+ const eliteCount=Math.max(3,Math.floor(popSize*0.20));
+ const generations=Math.max(1,Math.floor(budget/popSize));
+ let seen=new Set(), population=[];
+ const add=o=>{o=applySpecificLocks(o.filter(Boolean),locks); if(o.length!==players.length)return false; let k=key(o); if(seen.has(k))return false; seen.add(k); population.push({order:o,avg:null}); return true;};
+ addSeedsWithLocks(add,locks);
+ while(population.length<popSize) add(shuffleWithLocks(locks));
+ let allResults=[];
+ for(let gen=0; gen<generations && !stop; gen++){
+   for(const item of population){ if(item.avg==null) item.avg=evalLineup(item.order,set); }
+   population.sort((a,b)=>b.avg-a.avg);
+   allResults.push(...population); allResults.sort((a,b)=>b.avg-a.avg); allResults=uniqueResults(allResults).slice(0,40);
+   if(progressCb) progressCb(gen+1,generations,allResults[0]);
+   await new Promise(r=>setTimeout(r,0));
+   let elites=population.slice(0,eliteCount);
+   let next=elites.map(x=>({order:x.order,avg:x.avg}));
+   let nextKeys=new Set(next.map(x=>key(x.order)));
+   function pick(){
+     let pool=population.slice(0,Math.max(eliteCount*2,Math.floor(population.length*0.55)));
+     let best=null;
+     for(let t=0;t<3;t++){let cand=pool[Math.floor(Math.random()*pool.length)]; if(!best||cand.avg>best.avg)best=cand;}
+     return best.order;
+   }
+   while(next.length<popSize){
+     let child=Math.random()<0.75?crossoverWithLocks(pick(),pick(),locks):shuffleWithLocks(locks);
+     if(Math.random()<0.85) child=mutateWithLocks(child,locks);
+     if(Math.random()<0.25) child=mutateWithLocks(child,locks);
+     let k=key(child);
+     if(!nextKeys.has(k)){nextKeys.add(k); next.push({order:child,avg:null});}
+   }
+   population=next;
+ }
+ return uniqueResults(allResults).sort((a,b)=>b.avg-a.avg);
+}
+function makeForcedLocks(playerName, slot){
+ const locks={};
+ for(const [k,v] of Object.entries(lineupLocks)){
+   const s=+k;
+   if(v!==playerName && s!==slot) locks[s]=v;
+ }
+ locks[slot]=playerName;
+ return locks;
+}
+async function runLeverage(){
+ stop=false;
+ const sel=document.getElementById('leveragePlayer');
+ const playerName=sel.value;
+ if(!playerName){leverageStatus.innerHTML='<p class="bad">Choose a player first.</p>'; return;}
+ const baseSet=currentSettings();
+ baseSet.sims=Math.max(50,+levSims.value||500);
+ const budget=Math.max(50,+levBudget.value||1200);
+ const originalLocks={...lineupLocks};
+ const rows=[];
+ levProg.style.width='0%'; leverageResults.innerHTML='';
+ for(let slot=0; slot<players.length && !stop; slot++){
+   const locks=makeForcedLocks(playerName,slot);
+   leverageStatus.innerHTML=`<p>Testing ${esc(playerName)} locked at #${slot+1} (${slot+1}/${players.length})...</p>`;
+   const res=await geneticSearchForLocks(baseSet,locks,budget,(g,total,best)=>{
+     const pct=100*((slot)+(g/total))/players.length;
+     levProg.style.width=pct+'%';
+     leverageStatus.innerHTML=`<p>${esc(playerName)} at #${slot+1}: GA generation ${g}/${total}. Best for this slot: ${best.avg.toFixed(3)} runs/game.</p>`;
+   });
+   if(res.length) rows.push({slot,avg:res[0].avg,order:res[0].order,locks});
+ }
+ lineupLocks=originalLocks;
+ renderLocks();
+ rows.sort((a,b)=>b.avg-a.avg);
+ levProg.style.width='100%';
+ if(!rows.length){leverageStatus.innerHTML='<p class="bad">No leverage results produced.</p>'; return;}
+ const best=rows[0];
+ leverageStatus.innerHTML=`<p class="ok">${stop?'Stopped early. ':''}Best forced slot for ${esc(playerName)}: #${best.slot+1} at ${best.avg.toFixed(3)} runs/game.</p>`;
+ leverageResults.innerHTML='<table><thead><tr><th>Rank</th><th>Forced slot</th><th>Runs/game</th><th>Vs best slot</th><th>Optimized lineup with this lock</th></tr></thead><tbody>'+
+   rows.map((r,i)=>`<tr><td>${i+1}</td><td>#${r.slot+1}</td><td>${r.avg.toFixed(3)}</td><td>${signed(r.avg-best.avg)}</td><td>${r.order.map((p,idx)=>idx===r.slot?'<b>'+esc(p.name)+'</b>':esc(p.name)).join(' → ')}</td></tr>`).join('')+
+   '</tbody></table><p class="muted">Small differences can be simulation noise. Increase simulations per lineup and GA budget per slot for a stronger answer.</p>';
+}
+
+
+function actualStats(p){
+ const ab=Math.max(0,p.AB), h=p.H, bb=p.BB, hbp=p.HBP, sf=p.SF, tb=p['1B']+2*p['2B']+3*p['3B']+4*p.HR;
+ return {PA:p.PA,AB:ab,H:h,BB:bb,HBP:hbp,SO:p.SO,'1B':p['1B'],'2B':p['2B'],'3B':p['3B'],HR:p.HR,ROE:p.ROE,FC:p.FC,SAC:p.SAC,SF:sf,SB:p.SB,CS:p.CS,
+   AVG:ab?h/ab:0, OBP:(ab+bb+hbp+sf)?(h+bb+hbp)/(ab+bb+hbp+sf):0, SLG:ab?tb/ab:0, OPS:((ab+bb+hbp+sf)?(h+bb+hbp)/(ab+bb+hbp+sf):0)+(ab?tb/ab:0)};
+}
+function blankLine(){return {PA:0,AB:0,H:0,BB:0,HBP:0,SO:0,'1B':0,'2B':0,'3B':0,HR:0,ROE:0,FC:0,SAC:0,SF:0,SB:0,CS:0};}
+function addStat(a,b){for(const k of Object.keys(a)) a[k]+=b[k]||0; return a;}
+function derive(line){
+ const ab=Math.max(0,line.AB), h=line.H, bb=line.BB, hbp=line.HBP, sf=line.SF, tb=line['1B']+2*line['2B']+3*line['3B']+4*line.HR;
+ line.AVG=ab?h/ab:0; line.OBP=(ab+bb+hbp+sf)?(h+bb+hbp)/(ab+bb+hbp+sf):0; line.SLG=ab?tb/ab:0; line.OPS=line.OBP+line.SLG; return line;
+}
+function onePAForValidation(p){
+ const e=eventFor(p), out=blankLine(); out.PA=1;
+ if(e==='BB') out.BB=1;
+ else if(e==='HBP') out.HBP=1;
+ else if(e==='1B'){out.AB=1;out.H=1;out['1B']=1;}
+ else if(e==='2B'){out.AB=1;out.H=1;out['2B']=1;}
+ else if(e==='3B'){out.AB=1;out.H=1;out['3B']=1;}
+ else if(e==='HR'){out.AB=1;out.H=1;out.HR=1;}
+ else if(e==='SO'){out.AB=1;out.SO=1;}
+ else if(e==='SAC'){out.SAC=1;}
+ else if(e==='SF'){out.SF=1;}
+ else if(e==='ROE'){out.AB=1;out.ROE=1;}
+ else if(e==='FC'){out.AB=1;out.FC=1;}
+ else {out.AB=1;}
+ return out;
+}
+function simulatePlayerSeasonLine(p){
+ const line=blankLine(); let stealBudget=p.rawSbAttempts||0, attempts=0;
+ for(let i=0;i<Math.round(p.PA);i++){
+   const pa=onePAForValidation(p); addStat(line,pa);
+   const onFirst = pa.BB||pa.HBP||pa['1B']||pa.ROE||pa.FC;
+   if(onFirst && stealBudget>0){
+     // Validate steals as bases stolen with the same declining budget and base weighting.
+     for(let from=0; from<=2; from++){
+       const remaining=Math.max(0,stealBudget-attempts);
+       if(remaining<=0) break;
+       const baseWeight = from===0 ? +(sb2Weight?.value||1) : (from===1 ? +(sb3Weight?.value||0.55) : +(sbhWeight?.value||0.15));
+       const attemptProb=Math.min(1,p.sbAttempt*Math.min(1,remaining)*Math.max(0,baseWeight));
+       if(Math.random()>=attemptProb) break;
+       attempts++;
+       if(Math.random()<p.sbSuccess) line.SB++; else {line.CS++; break;}
+     }
+   }
+ }
+ return derive(line);
+}
+function simulateValidation(seasons){
+ const rows=[]; let actualTeam=blankLine(), simTeam=blankLine();
+ for(const p of players){
+   const actual=actualStats(p); addStat(actualTeam,actual);
+   let sum=blankLine();
+   for(let s=0;s<seasons;s++) addStat(sum,simulatePlayerSeasonLine(p));
+   for(const k of Object.keys(sum)) sum[k]/=seasons;
+   derive(sum); addStat(simTeam,sum);
+   rows.push({p,actual,sim:sum});
+ }
+ derive(actualTeam); derive(simTeam);
+ return {rows,actualTeam,simTeam};
+}
+function fmtAvg(x){return Number.isFinite(x)?x.toFixed(3).replace(/^0/,''):'.000';}
+function fmtNum(x){return Number.isFinite(x)?x.toFixed(1):'0.0';}
+function errClass(actual,sim,tol){return Math.abs(sim-actual)<=tol?'ok':'bad';}
+function pctErr(actual,sim){return actual?100*(sim-actual)/actual:0;}
+function renderValidation(v,seasons){
+ const statRows=['PA','AB','H','1B','2B','3B','HR','BB','HBP','SO','ROE','FC','SAC','SF','SB','CS'];
+ let team='<h3>Team cumulative sanity check</h3><table><thead><tr><th>Stat</th><th>Actual</th><th>Sim avg</th><th>Diff</th></tr></thead><tbody>'+
+ statRows.map(k=>`<tr><td>${k}</td><td>${fmtNum(v.actualTeam[k]||0)}</td><td>${fmtNum(v.simTeam[k]||0)}</td><td class="${Math.abs((v.simTeam[k]||0)-(v.actualTeam[k]||0))<=Math.max(1,0.08*(v.actualTeam[k]||1))?'ok':'bad'}">${signed((v.simTeam[k]||0)-(v.actualTeam[k]||0))}</td></tr>`).join('')+
+ ['AVG','OBP','SLG','OPS'].map(k=>`<tr><td>${k}</td><td>${fmtAvg(v.actualTeam[k])}</td><td>${fmtAvg(v.simTeam[k])}</td><td class="${errClass(v.actualTeam[k],v.simTeam[k],0.025)}">${signed(v.simTeam[k]-v.actualTeam[k])}</td></tr>`).join('')+'</tbody></table>';
+ let playersHtml='<h3>Player rate sanity check</h3><table><thead><tr><th>Player</th><th>Actual AVG</th><th>Sim AVG</th><th>Actual OBP</th><th>Sim OBP</th><th>Actual SLG</th><th>Sim SLG</th><th>Actual OPS</th><th>Sim OPS</th><th>Actual SB</th><th>Sim SB</th><th>Actual CS</th><th>Sim CS</th></tr></thead><tbody>'+
+ v.rows.map(r=>`<tr><td>${esc(r.p.name)}</td><td>${fmtAvg(r.actual.AVG)}</td><td class="${errClass(r.actual.AVG,r.sim.AVG,0.035)}">${fmtAvg(r.sim.AVG)}</td><td>${fmtAvg(r.actual.OBP)}</td><td class="${errClass(r.actual.OBP,r.sim.OBP,0.035)}">${fmtAvg(r.sim.OBP)}</td><td>${fmtAvg(r.actual.SLG)}</td><td class="${errClass(r.actual.SLG,r.sim.SLG,0.05)}">${fmtAvg(r.sim.SLG)}</td><td>${fmtAvg(r.actual.OPS)}</td><td class="${errClass(r.actual.OPS,r.sim.OPS,0.07)}">${fmtAvg(r.sim.OPS)}</td><td>${fmtNum(r.actual.SB)}</td><td>${fmtNum(r.sim.SB)}</td><td>${fmtNum(r.actual.CS)}</td><td>${fmtNum(r.sim.CS)}</td></tr>`).join('')+'</tbody></table>';
+ validationResults.innerHTML=team+playersHtml;
+ validationStatus.innerHTML=`<p class="ok">Validation complete: averaged ${seasons.toLocaleString()} simulated seasons per player. Yellow/red differences usually mean small-sample noise or an input column mismatch.</p>`;
+}
+async function runValidation(){
+ const seasons=Math.max(50,+valSeasons.value||1000); validationStatus.innerHTML=`<p>Running ${seasons.toLocaleString()} validation seasons per player...</p>`; validationResults.innerHTML=''; await new Promise(r=>setTimeout(r,0));
+ const v=simulateValidation(seasons); renderValidation(v,seasons);
+}
+function currentSettings(){return {innings:+innings.value,sims:Math.max(50,Math.min(1000,+sims.value||300)),wpRate:1/Math.max(1,+wpEvery.value),s2single:+document.getElementById('s2single').value,s1double:+document.getElementById('s1double').value,f1single:+document.getElementById('f1single').value,sfScore:+document.getElementById('sfScore').value,gbRate:+document.getElementById('gbRate').value,gbScore3:+document.getElementById('gbScore3').value,gbAdv2:+document.getElementById('gbAdv2').value,gbForce1:+document.getElementById('gbForce1').value,flyAdv2:+document.getElementById('flyAdv2').value,fcLeadOut:+document.getElementById('fcLeadOut').value,fcOtherAdv:+document.getElementById('fcOtherAdv').value,sb2Weight:+document.getElementById('sb2Weight').value,sb3Weight:+document.getElementById('sb3Weight').value,sbhWeight:+document.getElementById('sbhWeight').value};}
+function setAssumptions(set){['s2single','s1double','f1single','sfScore','gbRate','gbScore3','gbAdv2','gbForce1','flyAdv2','fcLeadOut','fcOtherAdv'].forEach(k=>{if(document.getElementById(k))document.getElementById(k).value=Number(set[k]).toFixed(2);});}
+async function calibrateAssumptions(){
+ const targetRuns=players.reduce((a,p)=>a+p.R,0)/Math.max(1,Math.max(...players.map(p=>p.GP||0)));
+ const base=currentSettings(); base.sims=Math.max(150,Math.min(600,+sims.value||300));
+ const order=players; let best=null; const trials=90;
+ validationStatus.innerHTML=`<p>Calibrating against actual team runs/game ≈ ${targetRuns.toFixed(2)} using ${trials} random assumption sets...</p>`; await new Promise(r=>setTimeout(r,0));
+ function rand(lo,hi){return lo+Math.random()*(hi-lo)}
+ for(let i=0;i<trials;i++){
+   const set={...base,
+    s2single:rand(.45,.80), s1double:rand(.30,.70), f1single:rand(.20,.60), sfScore:rand(.65,.95),
+    gbRate:rand(.40,.70), gbScore3:rand(.15,.55), gbAdv2:rand(.25,.65), gbForce1:rand(.35,.80), flyAdv2:rand(.10,.45), fcLeadOut:rand(.55,.90), fcOtherAdv:rand(.40,.85)};
+   const rpg=evalLineup(order,set); const err=Math.abs(rpg-targetRuns);
+   if(!best||err<best.err) best={set,rpg,err};
+   if(i%10===0){validationStatus.innerHTML=`<p>Calibration trial ${i+1}/${trials}. Best so far ${best.rpg.toFixed(2)} vs target ${targetRuns.toFixed(2)} runs/game.</p>`; await new Promise(r=>setTimeout(r,0));}
+ }
+ setAssumptions(best.set);
+ validationStatus.innerHTML=`<p class="ok">Calibration complete. Best current-lineup estimate: ${best.rpg.toFixed(2)} runs/game vs actual team rate ${targetRuns.toFixed(2)}. Updated the assumption inputs above.</p>`;
+}
+
+
+function groupName(slot,n){ if(slot<3) return 'Top 1–3'; if(slot>=n-3) return 'Bottom 7–9'; return 'Middle'; }
+function clsSigned(x){ return x>=0?'pos':'neg'; }
+async function runTurnoverValue(){
+ stop=false;
+ const set=currentSettings();
+ set.sims=Math.max(50,+turnSims.value||350);
+ const budget=Math.max(50,+turnBudget.value||650);
+ const n=players.length;
+ const bottomStart=Math.max(0,n-3);
+ const rows=[];
+ turnProg.style.width='0%'; turnoverResults.innerHTML='';
+ let total=players.length*n, done=0;
+ for(const p of players){
+   let bySlot=[];
+   for(let slot=0; slot<n && !stop; slot++){
+     turnoverStatus.innerHTML=`<p>Testing ${esc(p.name)} forced at #${slot+1} (${done+1}/${total})...</p>`;
+     const locks=makeForcedLocks(p.name,slot);
+     const res=await geneticSearchForLocks(set,locks,budget,(g,gTot,best)=>{
+       const pct=100*(done + g/gTot)/total; turnProg.style.width=pct+'%';
+       turnoverStatus.innerHTML=`<p>${esc(p.name)} at #${slot+1}: generation ${g}/${gTot}. Best ${best.avg.toFixed(3)} runs/game.</p>`;
+     });
+     if(res.length) bySlot.push({slot,avg:res[0].avg,order:res[0].order});
+     done++; turnProg.style.width=(100*done/total)+'%';
+   }
+   if(bySlot.length){
+     const bestAny=bySlot.reduce((a,b)=>a.avg>b.avg?a:b);
+     const bottom=bySlot.filter(x=>x.slot>=bottomStart);
+     const top=bySlot.filter(x=>x.slot<Math.min(3,n));
+     const mid=bySlot.filter(x=>x.slot>=3 && x.slot<bottomStart);
+     const bestBottom=bottom.length?bottom.reduce((a,b)=>a.avg>b.avg?a:b):bestAny;
+     const bestTop=top.length?top.reduce((a,b)=>a.avg>b.avg?a:b):null;
+     const bestMid=mid.length?mid.reduce((a,b)=>a.avg>b.avg?a:b):null;
+     rows.push({player:p,bySlot,bestAny,bestBottom,bestTop,bestMid,bottomPenalty:bestAny.avg-bestBottom.avg, bottomRank:bestBottom.slot+1});
+   }
+ }
+ rows.sort((a,b)=>a.bottomPenalty-b.bottomPenalty || b.bestBottom.avg-a.bestBottom.avg);
+ turnProg.style.width='100%';
+ if(!rows.length){turnoverStatus.innerHTML='<p class="bad">No turnover results produced.</p>'; return;}
+ turnoverStatus.innerHTML=`<p class="ok">Turnover analysis complete. Players with the smallest bottom penalty are the most plausible second-leadoff / bottom-order bridge candidates.</p>`;
+ turnoverResults.innerHTML='<table><thead><tr><th>Player</th><th>Best any slot</th><th>Best bottom slot</th><th>Bottom penalty</th><th>Best top</th><th>Best middle</th><th>Interpretation</th></tr></thead><tbody>'+rows.map(r=>{
+   const interp = r.bottomPenalty<0.05 ? 'Very safe to bat lower / strong turnover value' : r.bottomPenalty<0.15 ? 'Can bat lower if lineup context helps' : 'Usually costly to bury';
+   return `<tr><td>${esc(r.player.name)}</td><td>#${r.bestAny.slot+1}: ${r.bestAny.avg.toFixed(3)}</td><td>#${r.bestBottom.slot+1}: ${r.bestBottom.avg.toFixed(3)}</td><td class="${clsSigned(-r.bottomPenalty)}">-${r.bottomPenalty.toFixed(3)}</td><td>${r.bestTop?('#'+(r.bestTop.slot+1)+': '+r.bestTop.avg.toFixed(3)):'—'}</td><td>${r.bestMid?('#'+(r.bestMid.slot+1)+': '+r.bestMid.avg.toFixed(3)):'—'}</td><td>${interp}</td></tr>`;
+ }).join('')+'</tbody></table><p class="muted">Bottom penalty = player\'s best forced-slot runs/game minus his best forced bottom-slot runs/game. A low penalty means the lineup does not lose much by placing that strong hitter near the bottom to feed the top.</p>';
+}
+
+function randomAdjacentOrder(a,b){
+ const rest=shuffle(players.filter(p=>p!==a && p!==b));
+ const idx=Math.floor(Math.random()*(rest.length+1));
+ const out=[...rest.slice(0,idx),a,b,...rest.slice(idx)];
+ return applyLocks(out);
+}
+function randomUnlockedOrder(){ return applyLocks(shuffle(players)); }
+async function runPairwiseSynergy(){
+ stop=false;
+ const set=currentSettings(); set.sims=Math.max(25,+pairSims.value||150);
+ const samples=Math.max(5,+pairSamples.value||60);
+ pairProg.style.width='0%'; pairwiseResults.innerHTML='';
+ pairwiseStatus.innerHTML=`<p>Estimating randomized baseline from ${samples} random lineups...</p>`;
+ await new Promise(r=>setTimeout(r,0));
+ let base=0;
+ for(let i=0;i<samples && !stop;i++){
+   base+=evalLineup(randomUnlockedOrder(),set);
+   if(i%5===0){pairProg.style.width=(5*i/(samples+players.length*players.length*samples))+'%'; await new Promise(r=>setTimeout(r,0));}
+ }
+ base/=Math.max(1,samples);
+ const matrix={}, top=[];
+ let total=players.length*(players.length-1)*samples, done=0;
+ for(const a of players){
+   matrix[a.name]={};
+   for(const b of players){
+     if(a===b){matrix[a.name][b.name]=null; continue;}
+     let sum=0;
+     for(let s=0;s<samples && !stop;s++){
+       sum+=evalLineup(randomAdjacentOrder(a,b),set);
+       done++;
+       if(done%10===0){
+         pairProg.style.width=(100*done/Math.max(1,total))+'%';
+         pairwiseStatus.innerHTML=`<p>Pairwise synergy: ${done.toLocaleString()} / ${total.toLocaleString()} sampled adjacent lineups. Baseline ${base.toFixed(3)} runs/game.</p>`;
+         await new Promise(r=>setTimeout(r,0));
+       }
+     }
+     const avg=sum/Math.max(1,samples);
+     const syn=avg-base;
+     matrix[a.name][b.name]={avg,syn};
+     top.push({a,b,avg,syn});
+   }
+ }
+ top.sort((x,y)=>y.syn-x.syn);
+ pairProg.style.width='100%';
+ const names=players.map(p=>p.name);
+ const header='<tr><th>Ahead ↓ / Behind →</th>'+names.map(n=>`<th>${esc(n.split(' ')[0])}</th>`).join('')+'</tr>';
+ const body=names.map(a=>'<tr><th>'+esc(a)+'</th>'+names.map(b=>{
+   const cell=matrix[a][b]; if(!cell) return '<td>—</td>';
+   return `<td class="${clsSigned(cell.syn)}">${signed(cell.syn)}</td>`;
+ }).join('')+'</tr>').join('');
+ const topRows=top.slice(0,12).map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.a.name)} → ${esc(r.b.name)}</td><td>${r.avg.toFixed(3)}</td><td class="${clsSigned(r.syn)}">${signed(r.syn)}</td></tr>`).join('');
+ const lowRows=top.slice(-8).reverse().map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.a.name)} → ${esc(r.b.name)}</td><td>${r.avg.toFixed(3)}</td><td class="${clsSigned(r.syn)}">${signed(r.syn)}</td></tr>`).join('');
+ pairwiseStatus.innerHTML=`<p class="ok">Pairwise synergy complete. Baseline random-adjacency lineup: ${base.toFixed(3)} runs/game. Positive cells mean that ordered pair scored better than randomized lineups on average.</p>`;
+ pairwiseResults.innerHTML='<h4>Synergy matrix</h4><table>'+header+'<tbody>'+body+'</tbody></table><h4>Best adjacent pairs</h4><table><thead><tr><th>Rank</th><th>Pair</th><th>Runs/game</th><th>Synergy</th></tr></thead><tbody>'+topRows+'</tbody></table><h4>Weakest adjacent pairs</h4><table><thead><tr><th>Rank</th><th>Pair</th><th>Runs/game</th><th>Synergy</th></tr></thead><tbody>'+lowRows+'</tbody></table><p class="muted">This is an explanatory estimate, not the final optimizer. Increase samples and simulations to reduce noise.</p>';
+}
+
+
+function orderByNames(names){
+ const byName=new Map(players.map(p=>[p.name,p]));
+ const named=names.map(n=>byName.get(n)).filter(Boolean);
+ const rest=players.filter(p=>!named.includes(p));
+ return [...named,...rest];
+}
+function lineupLabelHtml(order){
+ return '<ol>'+order.map(p=>`<li>${esc(p.name)}${p.Pos?` <span class="muted">${esc(p.Pos)}</span>`:''}</li>`).join('')+'</ol>';
+}
+
+
+// --- Animated single-game visualization ---
+const VIZ_POS={first:[76,55],second:[50,29],third:[24,55],plate:[50,86]};
+function vizDelay(){return new Promise(async resolve=>{let ms=+document.getElementById('vizSpeed').value,elapsed=0;while(elapsed<ms){while(vizPaused)await new Promise(r=>setTimeout(r,100));let step=Math.min(100,ms-elapsed);await new Promise(r=>setTimeout(r,step));elapsed+=step;}resolve();});}
+function shortName(n){n=String(n??'Unknown');return n.length>19?n.slice(0,18)+'…':n;}
+function runnerPositionsFromBases(b){
+ const m={};
+ for(const [i,pos] of [['0','first'],['1','second'],['2','third']]){
+   const r=b[+i];
+   const name=(r&&typeof r==='object'&&r.name)?r.name:(typeof r==='string'?r:null);
+   if(name) m[name]=pos;
+ }
+ return m;
+}
+function renderVizRunners(b,batter=null){const layer=document.getElementById('runnerLayer'),desired=runnerPositionsFromBases(b);if(batter)desired[batter.name]='plate';const existing=new Map([...layer.querySelectorAll('.runner')].map(el=>[el.dataset.name,el]));for(const [name,pos] of Object.entries(desired)){let el=existing.get(name);if(!el){el=document.createElement('div');el.className='runner';el.dataset.name=name;el.textContent=shortName(name);layer.appendChild(el);}el.classList.toggle('batter',pos==='plate');const xy=VIZ_POS[pos];el.style.left=xy[0]+'%';el.style.top=xy[1]+'%';el.style.opacity='1';existing.delete(name);}for(const el of existing.values()){el.style.opacity='0';setTimeout(()=>el.remove(),250);}}
+function addVizLog(text){const log=document.getElementById('vizLog'),d=document.createElement('div');d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight;}
+function fmtVizRate(v){
+  if(v===undefined||v===null||v==='')return '—';
+  const n=Number(v);
+  return Number.isFinite(n)?n.toFixed(3).replace(/^0/,''):String(v);
+}
+function setVizState(runs,inn,outs,batter,play){
+  if(runs>lastVizRunsForAnimation){
+    const scored=runs-lastVizRunsForAnimation;
+    for(let i=0;i<scored;i++) setTimeout(()=>flashRunScored(),i*180);
+  }
+  lastVizRunsForAnimation=runs;
+
+  document.getElementById('vizRuns').textContent=runs;
+  document.getElementById('vizScore').textContent=runs;
+  document.getElementById('vizInning').textContent=Math.min(inn,+document.getElementById('innings').value);
+  document.getElementById('vizOuts').textContent=outs;
+  document.getElementById('vizBatter').textContent=batter?(batter.name||batter.player?.name||batter.player||'Unknown hitter'):'—';
+  document.getElementById('vizPlay').textContent=play||'';
+  document.getElementById('vizBatterAVG').textContent=batter?fmtVizRate(batter.AVG):'—';
+  document.getElementById('vizBatterOBP').textContent=batter?fmtVizRate(batter.OBP ?? rate(batter)):'—';
+  document.getElementById('vizBatterOPS').textContent=batter?fmtVizRate(batter.OPS ?? ops(batter)):'—';
+  document.getElementById('vizBatterSB').textContent=batter?(batter.SB ?? 0):'—';
+}
+
+function resolveVizPlayer(x){
+  if(!x) return null;
+  if(typeof x==='string') return players.find(p=>p.name===x) || {name:x};
+  if(x.name) return players.find(p=>p.name===x.name) || x;
+  if(x.player && typeof x.player==='string') return players.find(p=>p.name===x.player) || {name:x.player};
+  if(x.player && x.player.name) return players.find(p=>p.name===x.player.name) || x.player;
+  return null;
+}
+function normalizeVizLineup(order){
+  const resolved=(order||[]).map(resolveVizPlayer).filter(Boolean);
+  const used=new Set(resolved.map(p=>p.name));
+  for(const p of players) if(!used.has(p.name)){ resolved.push(p); used.add(p.name); }
+  return resolved.slice(0,players.length);
+}
+
+function updateVizLineupOptions(){
+  const sel=document.getElementById('vizLineup');
+  if(!sel) return;
+  for(let i=1;i<=10;i++){
+    const opt=sel.querySelector(`option[value="opt${i}"]`);
+    if(!opt) continue;
+    const row=lastTopOptimizedOrders[i-1];
+    if(row){
+      opt.disabled=false;
+      opt.textContent=`Optimized #${i}${Number.isFinite(row.avg)?` (${row.avg.toFixed(3)} RPG)`:''}`;
+    }else{
+      opt.disabled=true;
+      opt.textContent=`Optimized #${i} (not available yet)`;
+    }
+  }
+}
+
+function getVizLineup(){
+  const m=document.getElementById('vizLineup').value;
+  let order;
+  if(m==='best'&&lastBestOrder?.length) order=[...lastBestOrder];
+  else if(/^opt\d+$/.test(m)){
+    const idx=Math.max(0,Math.min(9,Number(m.slice(3))-1));
+    const saved=lastTopOptimizedOrders[idx];
+    order=saved?.order?.length?[...saved.order]:(lastBestOrder?.length?[...lastBestOrder]:[...players]);
+  }
+  else if(m==='obp') order=applyLocks([...players].sort((a,b)=>statOBP(b)-statOBP(a)));
+  else if(m==='revobp') order=applyLocks([...players].sort((a,b)=>statOBP(a)-statOBP(b)));
+  else if(m==='ops') order=applyLocks([...players].sort((a,b)=>statOPS(b)-statOPS(a)));
+  else if(m==='revops') order=applyLocks([...players].sort((a,b)=>statOPS(a)-statOPS(b)));
+  else order=applyLocks([...players]);
+  return normalizeVizLineup(order);
+}
+function renderVizLineup(order,currentIndex=-1){
+  const box=document.getElementById('vizLineupList');
+  const fmt=v=>{const n=Number(v);return Number.isFinite(n)?n.toFixed(3).replace(/^0/,''):'—';};
+  box.innerHTML=`<div style="display:grid;grid-template-columns:26px minmax(150px,1fr) 52px 52px 52px 36px;gap:7px;padding:0 7px 4px;font-size:11px;color:#666"><span></span><span>Player</span><span>AVG</span><span>OBP</span><span>OPS</span><span>SB</span></div>`+
+    order.map((p,i)=>{
+      const current=i===currentIndex;
+      const avg=fmt(p?.AVG), obp=fmt(p?.OBP ?? rate(p)), op=fmt(p?.OPS ?? ops(p)), sb=p?.SB ?? 0;
+      return `<div class="lineupRow ${current?'current':''}" style="display:grid;grid-template-columns:26px minmax(150px,1fr) 52px 52px 52px 36px;gap:7px;align-items:center;font-weight:400;min-height:28px;box-sizing:border-box"><div class="lineupNum">${i+1}.</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(p?.name||'Unknown')}">${esc(p?.name||'Unknown')}</div><div>${avg}</div><div>${obp}</div><div>${op}</div><div>${sb}</div></div>`;
+    }).join('');
+}
+function setVizOutcome(code,desc){document.getElementById('vizOutcomeCode').textContent=code||'—';document.getElementById('vizOutcomeDesc').textContent=desc||'';}
+function flyCode(){const r=Math.random();return r<.34?'F7':r<.67?'F8':'F9';}
+function groundCode(){const r=Math.random();return r<.22?'6-3':r<.44?'4-3':r<.62?'5-3':r<.80?'3-1':r<.90?'1-3':'U3';}
+function fcCode(b){if(b[0])return Math.random()<.5?'6-4':'4-6';if(b[1])return Math.random()<.5?'5-6':'6-5';if(b[2])return Math.random()<.5?'5-2':'6-2';return groundCode();}
+function describeVizEvent(e,p,before,after,code){const labels={BB:'walk',HBP:'hit by pitch','1B':'single','2B':'double','3B':'triple',HR:'home run',SO:'strikeout',SAC:'sacrifice bunt',SF:'sacrifice fly',ROE:'reached on error',FC:"fielder's choice",OUT:'batted out'};const scored=after-before;return {code:code||e,desc:`${p.name}: ${labels[e]||e}${scored?` — ${scored} run${scored===1?'':'s'} scored`:''}`};}
+async function watchedSingleGame(order,set,gameNum,totalGames,seriesRuns){
+  document.getElementById('vizLog').innerHTML='';
+  document.getElementById('runnerLayer').innerHTML='';
+  document.getElementById('vizGameNumber').textContent=`${gameNum} of ${totalGames}`;
+  document.getElementById('vizSeriesRuns').textContent=seriesRuns;
+  document.getElementById('vizSeriesAvg').textContent=(seriesRuns/Math.max(1,gameNum-1)).toFixed(2);
+  renderVizLineup(order,-1);setVizOutcome('—',`Game ${gameNum} starting`);
+  let runs=0,outs=0,inn=1,bi=0,b=[0,0,0],stealState={},gameInnings=offensiveInningsForGame(set);
+  lastVizRunsForAnimation=0;
+  setVizState(0,1,0,null,`Game ${gameNum} starting`);
+
+  while(inn<=gameInnings&&vizRunning){
+    while(vizPaused&&vizRunning)await new Promise(r=>setTimeout(r,100));
+    if(!vizRunning)break;
+
+    let idx=bi%order.length,p=order[idx];bi++;
+    renderVizLineup(order,idx);
+    renderVizRunners(b,p); // batter box starts at home
+    setVizState(runs,inn,outs,p,'At bat');setVizOutcome('…','At bat');
+    await vizDelay(); if(!vizRunning)break;
+
+    // WP/PB: animate every runner one base, including third -> home.
+    if(Math.random()<set.wpRate&&(b[0]||b[1]||b[2])){
+      const beforeBases=[...b], beforeRuns=runs;
+      runs+=advance(b,1);
+      await animateBaseTransition(beforeBases,[...b],null,'WP/PB',runs-beforeRuns);
+      renderVizRunners(b,p);
+      setVizState(runs,inn,outs,p,'Wild pitch / passed ball');
+      setVizOutcome('WP/PB',runs>beforeRuns?'Runner advances; run scores':'Runner(s) advance');
+      addVizLog(`Game ${gameNum}, inning ${inn}: WP/PB — runners advance${runs>beforeRuns?', run scores':''}.`);
+      await vizDelay(); if(!vizRunning)break;
+    }
+
+    const beforeBases=[...b], beforeRuns=runs;
+    let e=eventFor(p),code=e;
+    if(e==='BB'||e==='HBP'){runs+=forceWalk(b);b[0]=p;}
+    else if(e==='1B'){runs+=single(b,set);b[0]=p;}
+    else if(e==='2B'){runs+=doubleHit(b,set);b[1]=p;}
+    else if(e==='3B'){runs+=advance(b,3);b[2]=p;}
+    else if(e==='HR'){runs+=advance(b,4)+1;}
+    else if(e==='ROE'){runs+=forceWalk(b);b[0]=p;code='E';}
+    else if(e==='SAC'){outs++;code=Math.random()<.5?'SAC 1-3':'SAC 5-3';if(outs<3)runs+=groundOut(b,set);}
+    else if(e==='SF'){outs++;code='SF'+flyCode().slice(1);if(outs<3)runs+=flyOut(b,set);}
+    else if(e==='FC'){code='FC '+fcCode(b);outs++;if(outs<3)runs+=fieldersChoice(b,set,p);}
+    else if(e==='OUT'){
+      outs++;
+      if(Math.random()<set.gbRate){code=groundCode();if(outs<3)runs+=groundOut(b,set);}
+      else{code=flyCode();if(outs<3)runs+=flyOut(b,set);}
+    }else{outs++;code='K';}
+    if(e==='SO')code='K';
+
+    // Animate all movement BEFORE redrawing the final base state.
+    await animateBaseTransition(beforeBases,[...b],p,code,runs-beforeRuns);
+    renderVizRunners(b,null);
+
+    let info=describeVizEvent(e,p,beforeRuns,runs,code);
+    setVizOutcome(info.code,info.desc);setVizState(runs,inn,outs,p,info.desc);
+    addVizLog(`Inning ${inn}, ${Math.min(outs,3)} out${outs===1?'':'s'}: ${info.code} — ${info.desc}`);
+    await vizDelay(); if(!vizRunning)break;
+
+    // Steals: animate the runner box from current base to destination.
+    if(outs<3&&['BB','HBP','1B','2B','3B','ROE'].includes(e)){
+      let runner=p,st=stealState[runner.name]||(stealState[runner.name]={attempts:0,successes:0});
+      for(let from=0;from<=2&&outs<3&&vizRunning;from++){
+        if(b[from]!==runner)continue;
+        let to=from+1;
+        if(to<3&&b[to])break;
+        let expected=Math.max(0,runner.expectedStealAttemptsPerGame||0),
+            remaining=Math.max(0,expected-st.attempts);
+        if(remaining<=0)break;
+        let prob=Math.min(1,runner.sbAttempt*Math.min(1,remaining)*stealWeightForFromBase(from,set));
+        if(Math.random()>=prob)break;
+
+        st.attempts++;
+        let baseName=to===1?'2B':to===2?'3B':'HOME';
+        if(Math.random()<runner.sbSuccess){
+          b[from]=0;st.successes++;
+          if(to>=3){
+            runs++;
+            await animateStealMovement(runner,from,to,true);
+            addVizLog(`${runner.name}: SB HOME — steals home!`);
+            setVizOutcome('SB HOME',`${runner.name} steals home`);
+          }else{
+            b[to]=runner;
+            await animateStealMovement(runner,from,to,true);
+            addVizLog(`${runner.name}: SB ${baseName}.`);
+            setVizOutcome('SB '+baseName,`${runner.name} steals ${baseName}`);
+          }
+          renderVizRunners(b,null);
+          setVizState(runs,inn,outs,p,`${runner.name} steals ${baseName}`);
+          await vizDelay();
+          if(to>=3)break;
+        }else{
+          b[from]=0;outs++;
+          addVizLog(`${runner.name}: CS ${baseName}.`);
+          renderVizRunners(b,null);
+          setVizOutcome('CS '+baseName,`${runner.name} caught stealing ${baseName}`);
+          setVizState(runs,inn,outs,p,`${runner.name} caught stealing ${baseName}`);
+          await vizDelay();break;
+        }
+      }
+    }
+
+    if(outs>=3){
+      addVizLog(`End of inning ${inn}. Red Sox ${runs}, Opponent 0.`);
+      inn++;outs=0;b=[0,0,0];renderVizRunners(b,null);
+      if(inn<=gameInnings&&vizRunning){
+        setVizState(runs,inn,0,null,'New inning');setVizOutcome('—',`Start of inning ${inn}`);
+        renderVizLineup(order,-1);await vizDelay();
+      }
+    }
+  }
+  if(vizRunning){
+    setVizState(runs,gameInnings,0,null,`Final: Red Sox ${runs}, Opponent 0`);
+    setVizOutcome('FINAL',`Game ${gameNum}: Red Sox ${runs} – Opponent 0`);
+    renderVizLineup(order,-1);addVizLog(`FINAL — Red Sox ${runs}, Opponent 0.`);
+  }
+  return runs;
+}
+async function watchedSeries(order,set,totalGames){
+  if(vizRunning)return;
+  vizRunning=true;vizPaused=false;
+  document.getElementById('pauseGame').textContent='Pause';
+  let seriesRuns=0,completed=0;
+  document.getElementById('vizSeriesRuns').textContent='0';
+  document.getElementById('vizSeriesAvg').textContent='0.00';
+  for(let g=1;g<=totalGames&&vizRunning;g++){
+    const gr=await watchedSingleGame(order,set,g,totalGames,seriesRuns);
+    if(!vizRunning)break;
+    seriesRuns+=gr;completed++;
+    document.getElementById('vizSeriesRuns').textContent=seriesRuns;
+    document.getElementById('vizSeriesAvg').textContent=(seriesRuns/completed).toFixed(2);
+    if(g<totalGames){setVizOutcome('NEXT',`Game ${g} complete — next game starting`);await vizDelay();}
+  }
+  if(vizRunning){
+    setVizOutcome('SERIES',`${completed} games: ${seriesRuns} runs, ${(seriesRuns/Math.max(1,completed)).toFixed(2)} per game`);
+    addVizLog(`SERIES COMPLETE — ${completed} games, ${seriesRuns} total runs, ${(seriesRuns/Math.max(1,completed)).toFixed(2)} runs/game.`);
+  }
+  vizRunning=false;
+}
+function watchSettings(){return {innings:+document.getElementById('innings').value,fullInningPct:clamp(+document.getElementById('fullInningPct').value,0,1),homeAway:document.getElementById('homeAway').value,winPct:clamp(+document.getElementById('winPct').value,0,1),sims:1,wpRate:1/Math.max(1,+document.getElementById('wpEvery').value),s2single:+document.getElementById('s2single').value,s1double:+document.getElementById('s1double').value,f1single:+document.getElementById('f1single').value,sfScore:+document.getElementById('sfScore').value,gbRate:+document.getElementById('gbRate').value,gbScore3:+document.getElementById('gbScore3').value,gbAdv2:+document.getElementById('gbAdv2').value,gbForce1:+document.getElementById('gbForce1').value,flyAdv2:+document.getElementById('flyAdv2').value,fcLeadOut:+document.getElementById('fcLeadOut').value,fcOtherAdv:+document.getElementById('fcOtherAdv').value,sb2Weight:+document.getElementById('sb2Weight').value,sb3Weight:+document.getElementById('sb3Weight').value,sbhWeight:+document.getElementById('sbhWeight').value};}
+document.getElementById('watchGame').onclick=()=>{if(!players.length)return;vizRunning=false;const order=getVizLineup();const total=Math.max(1,Math.floor(+document.getElementById('vizGames').value||1));renderVizLineup(order,-1);setTimeout(()=>watchedSeries(order,watchSettings(),total),20);};
+document.getElementById('vizLineup').addEventListener('change',()=>{if(players.length)renderVizLineup(getVizLineup(),-1);});
+document.getElementById('pauseGame').onclick=()=>{vizPaused=!vizPaused;document.getElementById('pauseGame').textContent=vizPaused?'Resume':'Pause';};
+document.getElementById('stopWatch').onclick=()=>{vizRunning=false;vizPaused=false;document.getElementById('pauseGame').textContent='Pause';setVizOutcome('STOP','Visualization stopped');};
+
+
+window.addEventListener('error',e=>{
+  try{statusEl.innerHTML=`<p style="color:#b00020"><b>JavaScript error:</b> ${String(e.message)}</p>`;}catch(_){}
+});
+window.addEventListener('unhandledrejection',e=>{
+  try{
+    const msg=e.reason && e.reason.message ? e.reason.message : String(e.reason);
+    statusEl.innerHTML=`<p style="color:#b00020"><b>Optimizer error:</b> ${msg}</p>`;
+  }catch(_){}
+});
+
+document.getElementById('useEmbedded').onclick=()=>{activeDataset='Red Sox'; normalize(EMBEDDED);};
+document.getElementById('file').onchange=async e=>{
+ let f=e.target.files[0]; if(!f)return;
+ try{
+   activeDataset='Custom CSV';
+   let rows=parseCSV(await f.text());
+   let battingRows=objRows(rows);
+   if(!battingRows.length) throw new Error('No batting player rows with PA were found in this CSV.');
+   normalize(battingRows);
+   document.getElementById('loadMsg').innerHTML += `<p class="ok">Imported batting stats from ${esc(f.name)}. Pitching/fielding sections, totals and glossary rows were ignored.</p>`;
+ }catch(err){
+   console.error('CSV import error:',err);
+   document.getElementById('loadMsg').innerHTML=`<p style="color:#b00020"><b>CSV import error:</b> ${esc(err?.message||String(err))}</p>`;
+ }
+};
+document.getElementById('eligiblePaPct').addEventListener('change',()=>applyEligibilitySetting(true));
+document.getElementById('run').onclick=async()=>{
+  try{
+    await run();
+  }catch(err){
+    console.error('Optimizer error:',err);
+    statusEl.innerHTML=`<p style="color:#b00020"><b>Optimizer error:</b> ${String(err && err.message ? err.message : err)}</p>`;
+    progEl.style.width='0%';
+  }
+}; document.getElementById('stop').onclick=()=>stop=true; document.getElementById('defaultLocks').onclick=()=>{setDefaultLocks();renderLocks();}; document.getElementById('clearLocks').onclick=clearAllLocks; document.getElementById('validateBtn').onclick=runValidation; document.getElementById('calibrateBtn').onclick=calibrateAssumptions; document.getElementById('leverageBtn').onclick=runLeverage; document.getElementById('stopLeverage').onclick=()=>stop=true; document.getElementById('turnoverBtn').onclick=runTurnoverValue; document.getElementById('stopTurnover').onclick=()=>stop=true; document.getElementById('pairwiseBtn').onclick=runPairwiseSynergy; document.getElementById('stopPairwise').onclick=()=>stop=true;
+normalize(EMBEDDED);
+setTimeout(()=>{try{updateVizLineupOptions();}catch(e){}},0);
+</script>
+<div class="card" id="licenseCard" style="margin-top:16px">
+  <h2>Copyright &amp; License</h2>
+  <p><b>Copyright © 2026 Ari Shapiro. All rights reserved.</b></p>
+  <p>This software is licensed for <b>personal, non-commercial use only</b>. You may use it in its original form for personal, non-commercial purposes. Copying, modification, redistribution, sublicensing, sale, publication, commercial use, or incorporation of this software or its source code into another product or service is prohibited without the author's prior written permission.</p>
+  <p class="muted">This software is provided “as is,” without warranty of any kind, express or implied, including warranties of merchantability, fitness for a particular purpose, and noninfringement. The author shall not be liable for claims, damages, or other liability arising from use of the software.</p>
+  <p class="muted">Licensing inquiries: <a href="mailto:ariyshapiro@gmail.com">ariyshapiro@gmail.com</a></p>
+</div>
+</body>
+</html>
