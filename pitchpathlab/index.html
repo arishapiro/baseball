@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pitch Path Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: side-view field diagram on top, big approach-angle readout strip, control panel in a two-column grid below */
+:root{
+  --bg:#F2F4F0; --surface:#FFFFFF; --ink:#17212A; --muted:#5A676C; --line:#D2D9D3;
+  --turf:#E1E9DE; --clay:#C18457; --clay-edge:#94603A; --chalk:#FFFFFF;
+  --pitch:#C42B2B; --straight:#2D6AA3; --zone:rgba(45,106,163,.10); --zone-edge:rgba(45,106,163,.45);
+  --display:"Saira Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161A; --surface:#172026; --ink:#E6ECE9; --muted:#93A2A5; --line:#2A363C;
+  --turf:#18241F; --clay:#9C6440; --clay-edge:#C18457; --chalk:#E9EEEB;
+  --pitch:#FF6A5C; --straight:#71AADF; --zone:rgba(113,170,223,.10); --zone-edge:rgba(113,170,223,.5);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161A; --surface:#172026; --ink:#E6ECE9; --muted:#93A2A5; --line:#2A363C;
+  --turf:#18241F; --clay:#9C6440; --clay-edge:#C18457; --chalk:#E9EEEB;
+  --pitch:#FF6A5C; --straight:#71AADF; --zone:rgba(113,170,223,.10); --zone-edge:rgba(113,170,223,.5);
+  color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,40px);letter-spacing:.01em;line-height:1;margin:0;text-transform:uppercase;text-wrap:balance}
+header p{margin:0;color:var(--muted);max-width:60ch}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.stage-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.stage-bar .grow{flex:1}
+svg#field{display:block;width:100%;height:auto}
+button,.chip{font:600 13px/1 var(--body);border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:4px;padding:8px 12px;cursor:pointer}
+button.primary{background:var(--pitch);border-color:var(--pitch);color:#fff;min-width:96px}
+button:focus-visible,.chip:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--straight);outline-offset:2px}
+.chip[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+label.check{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer}
+select{font:13px var(--body);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:6px 8px}
+.small{font-size:13px;color:var(--muted)}
+.timer{font-family:var(--mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.readouts{display:grid;grid-template-columns:minmax(220px,1.3fr) repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.ro{background:var(--surface);padding:12px 14px;display:grid;gap:2px;align-content:start}
+.ro .k{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.ro .v{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+.ro .s{font-size:12.5px;color:var(--muted)}
+.ro.hero .v{font-size:46px;color:var(--pitch)}
+.ro .faint{opacity:.75;font-family:var(--mono);font-size:12px}
+.warn{background:var(--surface);border:1px solid var(--pitch);color:var(--ink);border-radius:6px;padding:10px 14px}
+
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px}
+.ctl{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px;display:grid;gap:8px}
+.ctl-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.ctl-head .n{font-family:var(--display);font-weight:700;color:var(--pitch);font-size:18px}
+.ctl-head .lab{font-weight:600}
+.ctl-head .alt{margin-left:auto;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+.ctl-row{display:flex;align-items:center;gap:12px}
+.ctl-row input[type=range]{flex:1;min-width:0;accent-color:var(--pitch)}
+.num{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:13px;color:var(--muted)}
+.num input{width:72px;font:500 14px var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:5px 6px;text-align:right;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips .chip{padding:5px 9px;font-size:12px}
+.ctl .hint{font-size:12.5px;color:var(--muted);margin:0}
+
+.match{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px;display:grid;gap:10px}
+.match-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-start;justify-content:space-between}
+.match h2{font-family:var(--display);font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:.02em;margin:0;line-height:1.1}
+.match-head p{margin:4px 0 0;max-width:70ch}
+.match-table-wrap{overflow-x:auto}
+.match-table{border-collapse:collapse;width:100%;min-width:420px;font-variant-numeric:tabular-nums}
+.match-table th,.match-table td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.match-table th:first-child,.match-table td:first-child{text-align:left;color:var(--muted)}
+.match-table thead th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.match-table td{font-family:var(--mono);font-size:13.5px}
+.match-table td.good{color:var(--straight)}
+.match-table.opts tr.sel td{background:var(--bg);color:var(--ink)}
+.match-table.opts tr.sel td:first-child{color:var(--ink);font-weight:600}
+.match-table tr.grp td{background:var(--bg);color:var(--ink);font-family:var(--body);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;text-align:left;padding-top:12px}
+.match-table td.na{text-align:left;color:var(--muted);font-family:var(--body);font-style:italic}
+.match-table button.use{padding:5px 10px;font-size:12px}
+.match-table tr.sel button.use{background:var(--pitch);border-color:var(--pitch);color:#fff}
+.toss-fine{flex-wrap:wrap}
+.match-actions{display:flex;flex-wrap:wrap;gap:8px}
+#matchMsg{margin:0;color:var(--pitch);font-weight:600}
+.match .mode{margin:2px 0 0;font-weight:600;color:var(--pitch);font-size:14px}
+.match-table .tag{font:600 10px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--straight);border:1px solid var(--straight);border-radius:3px;padding:2px 4px;margin-left:6px;vertical-align:1px}
+.stage-bar button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.toss-fine input[type=range]{flex:1;min-width:160px;accent-color:var(--pitch)}
+.toss-fine .num{font-family:var(--mono);font-size:13px;color:var(--ink)}
+.title-block{display:grid;gap:6px}
+.byline{margin:0;font-size:14px;color:var(--muted);font-weight:600}
+.byline a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;user-select:all}
+.byline a:hover{text-decoration-color:var(--pitch)}
+footer.credit{border-top:1px solid var(--line);padding-top:12px;font-size:13px;color:var(--muted)}
+.notes{color:var(--muted);font-size:13.5px;max-width:75ch;display:grid;gap:6px}
+.notes p{margin:0}
+.notes strong{color:var(--ink)}
+
+svg text{font-family:var(--body)}
+@media (max-width:560px){.readouts{grid-template-columns:1fr 1fr}.ro.hero{grid-column:1/-1}.ro .v{font-size:22px}}
+</style>
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font-size:14px}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="title-block">
+      <h1>Pitch Path Lab</h1>
+      <p class="byline">By Ari Shapiro, PhD · <a href="mailto:ariyshapiro@gmail.com">ariyshapiro@gmail.com</a></p>
+    </div>
+    <p>Side view of a pitch from release to the front of home plate. The red curve is the ball's path under gravity; the dashed blue line is where it would go if gravity switched off.</p>
+  </header>
+
+  <section class="stage" aria-label="Side view of the pitch">
+    <div class="stage-bar">
+      <button id="play" class="primary" type="button">▶ Throw</button>
+      <button type="button" class="reset" data-preset="mlb">Reset: MLB 60′6″ · 90 mph</button>
+      <button type="button" class="reset" data-preset="ll">Reset: Little League 45′ · 50 mph</button>
+      <button type="button" id="matchBtn" title="Front toss with the same flight time and approach angle as the game pitch">Match with front toss</button>
+      <button type="button" id="matchTimeBtn" title="Front toss with the same flight time as the game pitch">Match flight time</button>
+      <button type="button" id="matchAngleBtn" title="Front toss with the same approach angle as the game pitch">Match approach angle</button>
+      <label class="small" for="slow">Playback</label>
+      <select id="slow">
+        <option value="1">Real time</option>
+        <option value="4">4× slower</option>
+        <option value="10" selected>10× slower</option>
+        <option value="25">25× slower</option>
+      </select>
+      <span class="timer" id="timer">t = 0.000 s</span>
+      <span class="grow"></span>
+      <label class="check"><input type="checkbox" id="showStraight" checked> No-gravity line</label>
+      <label class="small" for="marks">Time marks</label>
+      <select id="marks">
+        <option value="0">Off</option>
+        <option value="0.1">Every 0.1 s</option>
+        <option value="0.05">Every 0.05 s</option>
+        <option value="0.02" selected>Every 0.02 s</option>
+        <option value="0.01">Every 0.01 s</option>
+      </select>
+      <label class="small" for="exag">Height scale</label>
+      <select id="exag">
+        <option value="1">True scale</option>
+        <option value="2">2× tall</option>
+        <option value="3" selected>3× tall</option>
+        <option value="4">4× tall</option>
+      </select>
+    </div>
+    <svg id="field" viewBox="0 0 1000 420" role="img" aria-label="Pitch trajectory diagram"></svg>
+  </section>
+
+  <div id="warn" class="warn" hidden></div>
+
+  <section class="readouts" aria-live="polite">
+    <div class="ro hero"><span class="k">Approach angle at the plate</span><span class="v" id="rApproach">–</span><span class="s">Angle below horizontal as the ball crosses the front of the plate</span><span class="s faint" id="rEdges"></span></div>
+    <div class="ro"><span class="k">Release angle</span><span class="v" id="rRelease">–</span><span class="s" id="rReleaseS">relative to level</span></div>
+    <div class="ro"><span class="k">Flight time</span><span class="v" id="rTime">–</span><span class="s" id="rTravel">–</span></div>
+    <div class="ro"><span class="k">Gravity drop</span><span class="v" id="rDrop">–</span><span class="s">below the no-gravity line</span></div>
+    <div class="ro"><span class="k">Speed at plate</span><span class="v" id="rSpeed">–</span><span class="s">gravity only, no air drag</span></div>
+  </section>
+
+  <section class="match" id="match" hidden aria-live="polite">
+    <div class="match-head">
+      <div>
+        <h2>Front toss vs. game pitch</h2>
+        <p class="mode" id="matchMode"></p>
+        <p class="small" id="matchNote"></p>
+      </div>
+      <div class="match-actions">
+        <button type="button" id="backBtn">Back to game pitch</button>
+      </div>
+    </div>
+    <p class="small" id="matchMsg" hidden></p>
+    <div class="match-table-wrap"><table class="match-table opts">
+      <thead id="optHead"></thead>
+      <tbody id="optBody"></tbody>
+    </table></div>
+    <div class="ctl-row toss-fine">
+      <label class="small" for="tossRel" id="tossLab">Fine-tune release height</label>
+      <input type="range" id="tossRel" min="0.5" max="6" step="0.05" value="2">
+      <span class="num" id="tossRelV"></span>
+    </div>
+    <div class="match-table-wrap"><table class="match-table">
+      <thead><tr><th></th><th>Game pitch</th><th>Front toss (current)</th><th>Difference</th></tr></thead>
+      <tbody id="matchBody"></tbody>
+    </table></div>
+  </section>
+
+  <section class="controls">
+    <div class="ctl">
+      <div class="ctl-head"><span class="n">1</span><span class="lab">Distance to the plate</span><span class="alt" id="aDist"></span></div>
+      <div class="ctl-row"><input type="range" id="dist" min="5" max="70" step="0.5"><span class="num"><input type="number" id="distN" min="5" max="70" step="0.5" aria-label="Distance in feet">ft</span></div>
+      <div class="chips" id="distChips">
+        <button class="chip" type="button" data-v="60.5">MLB 60′6″</button>
+        <button class="chip" type="button" data-v="54">13U 54′</button>
+        <button class="chip" type="button" data-v="50">Little League Int. 50′</button>
+        <button class="chip" type="button" data-v="46">Little League 46′</button>
+        <button class="chip" type="button" data-v="30">Batting practice 30′</button>
+        <button class="chip" type="button" data-v="20">Batting practice 20′</button>
+      </div>
+      <p class="hint">Front of the pitching rubber to the back point of home plate. At 40 ft and beyond the throw comes from a mound; under 40 ft it is flat ground with no mound or rubber.</p>
+    </div>
+
+    <div class="ctl">
+      <div class="ctl-head"><span class="n">2</span><span class="lab">Release height</span><span class="alt" id="aRel"></span></div>
+      <div class="ctl-row"><input type="range" id="rel" min="0" max="8" step="0.05"><span class="num"><input type="number" id="relN" min="0" max="8" step="0.05" aria-label="Release height in feet">ft</span></div>
+      <p class="hint">Height of the ball at release, measured from field level at the plate. MLB averages about 5′9″; sidearmers sit near 4′, tall overhand pitchers near 7′.</p>
+    </div>
+
+    <div class="ctl">
+      <div class="ctl-head"><span class="n">3</span><span class="lab">Height over the plate</span><span class="alt" id="aTgt"></span></div>
+      <div class="ctl-row"><input type="range" id="tgt" min="0" max="6" step="0.05"><span class="num"><input type="number" id="tgtN" min="0" max="6" step="0.05" aria-label="Target height in feet">ft</span></div>
+      <p class="hint">Where the ball crosses the front edge of the plate. The shaded strike zone follows the batter height setting.</p>
+    </div>
+
+    <div class="ctl">
+      <div class="ctl-head"><span class="n">4</span><span class="lab">Pitch speed</span><span class="alt" id="aSpd"></span></div>
+      <div class="ctl-row"><input type="range" id="spd" min="10" max="105" step="0.5"><span class="num"><input type="number" id="spdN" min="10" max="105" step="0.5" aria-label="Speed in miles per hour">mph</span></div>
+      <p class="hint">Speed out of the hand, as a radar gun reads it.</p>
+    </div>
+
+    <div class="ctl">
+      <div class="ctl-head"><span class="lab">Batter height</span><span class="alt" id="aBat"></span></div>
+      <div class="ctl-row"><input type="range" id="bat" min="4" max="7" step="0.0833333"><span class="num"><input type="number" id="batN" min="4" max="7" step="0.01" aria-label="Batter height in feet">ft</span></div>
+      <p class="hint" id="batHint"></p>
+    </div>
+
+    <div class="ctl">
+      <div class="ctl-head"><span class="lab">Release extension</span><span class="alt" id="aExt"></span></div>
+      <div class="ctl-row"><input type="range" id="ext" min="0" max="8" step="0.1"><span class="num"><input type="number" id="extN" min="0" max="8" step="0.1" aria-label="Extension in feet">ft</span></div>
+      <p class="hint">How far in front of the rubber the ball leaves the hand. MLB pitchers average about 6.3 ft, so the ball actually travels well under 60 ft.</p>
+    </div>
+  </section>
+
+  <section class="notes">
+    <p><strong>How it's computed.</strong> For the chosen speed, the page solves for the release angle that makes a gravity-only path (g = 32.17 ft/s²) pass through your target height at the front of the plate, then reports the angle the ball is falling at when it gets there.</p>
+    <p><strong>Gravity only.</strong> Air drag and spin are left out. A real four-seam fastball's backspin holds it up, so MLB fastballs arrive about 1° to 2° flatter than this model predicts for the same speed and heights (typically 4° to 5° down). Curveballs, with topspin, come in steeper than the model. Slow the pitch down to see gravity alone push the angle past 10°.</p>
+  </section>
+  <footer class="credit">Pitch Path Lab, created by Ari Shapiro, PhD. Contact: <span style="user-select:all">ariyshapiro@gmail.com</span></footer>
+</div>
+
+<script>
+(function(){
+  const G = 32.174, MPH = 5280/3600, PLATE_FRONT = 17/12;
+  const S = { dist:60.5, rel:5.75, tgt:2.5, spd:90, ext:6.3, bat:73/12 };
+  // Rulebook zone in a normal stance: hollow below the kneecap to midway between shoulders and belt.
+  const ZB = () => 0.263*S.bat, ZT = () => 0.575*S.bat;
+  const ids = ["dist","rel","tgt","spd","ext","bat"];
+  const $ = id => document.getElementById(id);
+  const svg = $("field");
+  let anim = null, lastSol = null, lastLabelY = 0;
+
+  const ftin = f => { const t = Math.round(f*12); const neg = t<0; const a=Math.abs(t); return (neg?"−":"")+Math.floor(a/12)+"′ "+(a%12)+"″"; };
+
+  function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+  function solve(tgt){
+    if (tgt === undefined) tgt = S.tgt;
+    const v = S.spd*MPH;
+    const L = S.dist - S.ext - PLATE_FRONT;        // horizontal travel, ft
+    const dy = tgt - S.rel;
+    const k = G*L*L/(2*v*v);
+    const disc = L*L - 4*k*(k+dy);
+    if (L <= 1 || disc < 0) return { ok:false, L, v };
+    const T = (L - Math.sqrt(disc))/(2*k);         // flatter of the two solutions
+    const th = Math.atan(T);
+    const vx = v*Math.cos(th), vy0 = v*Math.sin(th);
+    const t = L/vx, vyf = vy0 - G*t;
+    return { ok:true, L, v, th, vx, vy0, t, vyf,
+      approach: Math.atan2(-vyf, vx)*180/Math.PI,
+      release: th*180/Math.PI,
+      drop: 0.5*G*t*t,
+      vEnd: Math.hypot(vx, vyf)/MPH,
+      peak: vy0>0 ? S.rel + vy0*vy0/(2*G) : S.rel };
+  }
+
+  // ---- drawing ----
+  function render(){
+    const sol = solve(); lastSol = sol;
+    const ex = +$("exag").value;
+    const R = S.dist, rel = R - S.ext;
+    const sMin = -12, sMax = 79;                   // fixed distance axis, independent of settings
+    const W = 1000, padL = 46, padR = 22;
+    const sx = (W - padL - padR)/(sMax - sMin);
+    const sy = sx*ex;
+    const top = 8;                                  // fixed height axis: 0 to 8 ft
+    const topPad = 26, botPad = 54;
+    const Y0 = topPad + top*sy;
+    const H = Math.round(Y0 + botPad);
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const X = s => W - padR - (s - sMin)*sx;      // s = feet from back point of plate
+    const Y = h => Y0 - h*sy;
+    let o = "";
+
+    // turf + height grid
+    o += `<rect x="0" y="${Y0}" width="${W}" height="${H-Y0}" fill="var(--turf)"/>`;
+    for (let h=1; h<=Math.floor(top); h++){
+      o += `<line x1="${padL}" x2="${W-padR}" y1="${Y(h)}" y2="${Y(h)}" stroke="var(--line)" stroke-width="1"/>`;
+      o += `<text x="${padL-8}" y="${Y(h)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${h} ft</text>`;
+    }
+
+    // mound (regulation profile, relative to rubber at s=R)
+    const m = [[R-10.5,0],[R-7,4/12],[R-0.5,10/12],[R+1,10/12],[R+7.5,0]];
+    let mp = `M${X(m[0][0])},${Y0} C${X(m[0][0]-0)},${Y0} ${X(R-9)},${Y(2.2/12)} ${X(m[1][0])},${Y(m[1][1])} L${X(m[2][0])},${Y(m[2][1])} L${X(m[3][0])},${Y(m[3][1])} C${X(R+3.5)},${Y(10/12)} ${X(R+6)},${Y(1/12)} ${X(m[4][0])},${Y0} Z`;
+    if (R < 40){
+      o += `<text x="${X(R)}" y="${Y0-8}" text-anchor="middle" font-size="11" fill="var(--muted)">flat ground</text>`;
+      o += `<line x1="${X(R)}" x2="${X(R)}" y1="${Y0-4}" y2="${Y0+4}" stroke="var(--ink)" stroke-width="1.5"/>`;
+    }
+    if (R >= 40){
+    o += `<path d="${mp}" fill="var(--clay)" stroke="var(--clay-edge)" stroke-width="1"/>`;
+    o += `<rect x="${X(R+0.5)}" y="${Y(10/12)-4}" width="${0.5*sx}" height="4" fill="var(--chalk)" stroke="var(--clay-edge)" stroke-width=".6"/>`;
+    o += `<text x="${X(R+0.25)}" y="${Y(10/12)-10}" text-anchor="middle" font-size="11" fill="var(--muted)">rubber</text>`;
+    }
+
+    // ground line
+    o += `<line x1="0" x2="${W}" y1="${Y0}" y2="${Y0}" stroke="var(--muted)" stroke-width="1"/>`;
+
+    // plate + strike zone
+    o += `<rect x="${X(PLATE_FRONT)}" y="${Y0-3}" width="${PLATE_FRONT*sx}" height="3" fill="var(--chalk)" stroke="var(--muted)" stroke-width=".8"/>`;
+    const zT = ZT(), zB = ZB();
+    o += `<line x1="${X(PLATE_FRONT/2)}" x2="${X(PLATE_FRONT/2)}" y1="${Y0}" y2="${Y(S.bat)}" stroke="var(--muted)" stroke-opacity=".55" stroke-dasharray="2 3"/>`;
+    o += `<line x1="${X(PLATE_FRONT/2)-6}" x2="${X(PLATE_FRONT/2)+6}" y1="${Y(S.bat)}" y2="${Y(S.bat)}" stroke="var(--muted)"/>`;
+    o += `<text x="${X(PLATE_FRONT/2)}" y="${Y(S.bat)-6}" text-anchor="middle" font-size="11" fill="var(--muted)">batter ${ftin(S.bat)}</text>`;
+    o += `<rect x="${X(PLATE_FRONT)}" y="${Y(zT)}" width="${PLATE_FRONT*sx}" height="${(zT-zB)*sy}" fill="var(--zone)" stroke="var(--zone-edge)" stroke-dasharray="3 3"/>`;
+
+    // distance ruler
+    const rY = Y0 + 20;
+    for (let s=0; s<=sMax-4; s+=10){
+      o += `<line x1="${X(s)}" x2="${X(s)}" y1="${Y0}" y2="${Y0+6}" stroke="var(--muted)"/>`;
+      o += `<text x="${X(s)}" y="${rY}" text-anchor="middle" font-size="11" fill="var(--muted)">${s} ft</text>`;
+    }
+    // travel bracket
+    const bY = Y0 + 38;
+    o += `<line x1="${X(rel)}" x2="${X(PLATE_FRONT)}" y1="${bY}" y2="${bY}" stroke="var(--ink)" stroke-width="1"/>`;
+    o += `<line x1="${X(rel)}" x2="${X(rel)}" y1="${bY-4}" y2="${bY+4}" stroke="var(--ink)"/><line x1="${X(PLATE_FRONT)}" x2="${X(PLATE_FRONT)}" y1="${bY-4}" y2="${bY+4}" stroke="var(--ink)"/>`;
+    o += `<rect x="${(X(rel)+X(PLATE_FRONT))/2-62}" y="${bY-9}" width="124" height="17" fill="var(--turf)"/>`;
+    o += `<text x="${(X(rel)+X(PLATE_FRONT))/2}" y="${bY+4}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">ball travels ${sol.L.toFixed(1)} ft</text>`;
+
+    // release height marker
+    o += `<line x1="${X(rel)}" x2="${X(rel)}" y1="${Y(S.rel)}" y2="${Y0}" stroke="var(--muted)" stroke-dasharray="2 4"/>`;
+    o += `<text x="${X(rel)-10}" y="${Y(S.rel)+4}" text-anchor="end" font-size="12" fill="var(--ink)" font-weight="600">release ${ftin(S.rel)}</text>`;
+    // target height marker
+    o += `<text x="${X(PLATE_FRONT)-8}" y="${Y(S.tgt)+ (S.tgt>3.3? 18: -12)}" text-anchor="end" font-size="12" fill="var(--ink)" font-weight="600">${ftin(S.tgt)}</text>`;
+
+    if (sol.ok){
+      const P = t => [X(rel - sol.vx*t), Y(S.rel + sol.vy0*t - 0.5*G*t*t)];
+      // straight (no gravity) line to plate
+      if ($("showStraight").checked){
+        const hS = S.rel + Math.tan(sol.th)*sol.L;
+        o += `<line x1="${X(rel)}" y1="${Y(S.rel)}" x2="${X(PLATE_FRONT)}" y2="${Y(hS)}" stroke="var(--straight)" stroke-width="1.6" stroke-dasharray="7 5"/>`;
+        o += `<circle cx="${X(PLATE_FRONT)}" cy="${Y(hS)}" r="4" fill="var(--surface)" stroke="var(--straight)" stroke-width="1.5"/>`;
+        // drop bracket
+        const bx = X(PLATE_FRONT) + 14;
+        o += `<line x1="${bx}" x2="${bx}" y1="${Y(hS)}" y2="${Y(S.tgt)}" stroke="var(--straight)" stroke-width="1.2"/>`;
+        o += `<line x1="${bx-4}" x2="${bx+4}" y1="${Y(hS)}" y2="${Y(hS)}" stroke="var(--straight)"/><line x1="${bx-4}" x2="${bx+4}" y1="${Y(S.tgt)}" y2="${Y(S.tgt)}" stroke="var(--straight)"/>`;
+        o += `<text x="${bx-8}" y="${Y(hS) - 8}" text-anchor="end" font-size="11.5" fill="var(--straight)" font-weight="600">gravity drop ${(sol.drop*12).toFixed(1)} in</text>`;
+      }
+      // faint reference paths to the top and bottom of the zone
+      const edges = [];
+      [[ZT(),"top"],[ZB(),"bottom"]].forEach(([h,name]) => {
+        const z = solve(h); if (!z.ok) return;
+        let dz = "";
+        for (let i=0;i<=60;i++){ const t=z.t*i/60; dz += (i?"L":"M")+X(rel - z.vx*t).toFixed(2)+","+Y(S.rel + z.vy0*t - 0.5*G*t*t).toFixed(2); }
+        o += `<path d="${dz}" fill="none" stroke="var(--pitch)" stroke-opacity=".32" stroke-width="1.5" stroke-dasharray="1 0"/>`;
+        o += `<circle cx="${X(PLATE_FRONT)}" cy="${Y(h)}" r="3" fill="var(--pitch)" fill-opacity=".35"/>`;
+        edges.push({h, name, a:z.approach});
+      });
+      // trajectory
+      let d = "";
+      const N = 80;
+      for (let i=0;i<=N;i++){ const [x,y]=P(sol.t*i/N); d += (i?"L":"M")+x.toFixed(2)+","+y.toFixed(2); }
+      o += `<path d="${d}" fill="none" stroke="var(--pitch)" stroke-width="2.6" stroke-linecap="round"/>`;
+      const step = +$("marks").value;
+      if (step > 0){
+        const n = Math.floor(sol.t/step + 1e-9);
+        for (let i=1; i<=n; i++){
+          const t = i*step;
+          if (sol.t - t < step*0.3) continue;            // skip a mark sitting on the plate
+          const [x,y] = P(t);
+          const major = Math.abs(t*10 - Math.round(t*10)) < 1e-6;   // every 0.1 s
+          if (major){
+            o += `<circle cx="${x}" cy="${y}" r="3.8" fill="var(--surface)" stroke="var(--pitch)" stroke-width="1.5"/>`;
+            o += `<text x="${x}" y="${y+17}" text-anchor="middle" font-size="10.5" fill="var(--muted)" font-family="var(--mono)">${t.toFixed(1)} s</text>`;
+          } else {
+            o += `<circle cx="${x}" cy="${y}" r="2.1" fill="var(--pitch)" fill-opacity=".55"/>`;
+          }
+        }
+      }
+      // angle arcs (screen space; labels give true angles)
+      o += angleMark(X(rel), Y(S.rel), sol.vx*sx, -sol.vy0*sy, sol.release, "release", true);
+      o += angleMark(X(PLATE_FRONT), Y(S.tgt), sol.vx*sx, -sol.vyf*sy, -sol.approach, "approach", false);
+      const mainY = lastLabelY;
+      edges.forEach(e => {
+        let y = Y(e.h) + 4;
+        const gap = y - mainY;
+        if (Math.abs(gap) < 18) y = mainY + (gap >= 0 ? 18 : -18);
+        o += `<text x="${X(PLATE_FRONT)+12}" y="${y}" font-size="11.5" fill="var(--muted)" fill-opacity=".85">${e.name} of zone ${e.a.toFixed(1)}° down</text>`;
+      });
+      // ball at rest at plate / animated ball
+      o += `<circle id="ball" cx="${X(PLATE_FRONT)}" cy="${Y(S.tgt)}" r="6" fill="var(--chalk)" stroke="var(--pitch)" stroke-width="2"/>`;
+      o += `<circle cx="${X(rel)}" cy="${Y(S.rel)}" r="4" fill="var(--ink)"/>`;
+      svg._P = P;
+    } else {
+      o += `<circle cx="${X(rel)}" cy="${Y(S.rel)}" r="4" fill="var(--ink)"/>`;
+      o += `<circle cx="${X(PLATE_FRONT)}" cy="${Y(S.tgt)}" r="5" fill="none" stroke="var(--pitch)" stroke-dasharray="2 2" stroke-width="1.5"/>`;
+      svg._P = null;
+    }
+    if (ex>1) o += `<text x="${padL}" y="16" font-size="11" fill="var(--muted)">Heights drawn ${ex}× taller than distances; angle labels show true values.</text>`;
+    svg.innerHTML = o;
+    updateReadouts(sol);
+  }
+
+  // Draws a horizontal reference, the tangent, an arc between them and a label.
+  function angleMark(cx, cy, dx, dy, trueDeg, kind, atStart){
+    const a = Math.atan2(dy, dx);          // screen angle of travel (y down)
+    const r = 34, len = 62;
+    let o = `<line x1="${cx}" y1="${cy}" x2="${cx+len}" y2="${cy}" stroke="var(--muted)" stroke-width="1"/>`;
+    o += `<line x1="${cx}" y1="${cy}" x2="${cx+len*Math.cos(a)}" y2="${cy+len*Math.sin(a)}" stroke="var(--pitch)" stroke-width="1.2" stroke-dasharray="${atStart?'0':'4 3'}"/>`;
+    if (Math.abs(a) > 0.01){
+      const ex = cx + r*Math.cos(a), ey = cy + r*Math.sin(a);
+      o += `<path d="M${cx+r},${cy} A${r},${r} 0 0 ${a>0?1:0} ${ex},${ey}" fill="none" stroke="var(--ink)" stroke-width="1.3"/>`;
+    }
+    const mid = a/2, lr = r + 30;
+    let lx = cx + lr*Math.cos(mid) + 8, ly = cy + lr*Math.sin(mid) + (a>0 ? 10 : -4);
+    if (a < -0.05){ lx = cx + 62*Math.cos(a-0.5) + 6; ly = cy + 62*Math.sin(a-0.5) - 2; }   // upward throw: label above the path
+    const word = trueDeg >= 0 ? "up" : "down";
+    const txt = `${Math.abs(trueDeg).toFixed(1)}° ${word}`;
+    lastLabelY = ly;
+    o += `<text x="${lx}" y="${ly}" font-size="13" font-weight="700" fill="var(--ink)" style="paint-order:stroke" stroke="var(--surface)" stroke-width="4">${txt}</text>`;
+    return o;
+  }
+
+  function updateReadouts(sol){
+    const w = $("warn");
+    if (!sol.ok){
+      w.hidden = false;
+      w.textContent = sol.L <= 1
+        ? "The release point is at or past the plate. Increase the distance or reduce the extension."
+        : `At ${S.spd} mph the ball can't reach ${ftin(S.tgt)} over the plate from a ${ftin(S.rel)} release, even thrown at the best angle. Raise the speed or lower the target.`;
+      ["rApproach","rRelease","rTime","rDrop","rSpeed"].forEach(i=>$(i).textContent="–");
+      $("rEdges").textContent = "";
+      $("rTravel").textContent = "";
+      return;
+    }
+    w.hidden = true;
+    $("rApproach").textContent = sol.approach.toFixed(1) + "°";
+    const zt = solve(ZT()), zb = solve(ZB());
+    $("rEdges").textContent = `Top of zone ${zt.ok ? zt.approach.toFixed(1)+"°" : "out of reach"} · Bottom of zone ${zb.ok ? zb.approach.toFixed(1)+"°" : "out of reach"}`;
+    $("rRelease").textContent = Math.abs(sol.release).toFixed(1) + "°";
+    $("rReleaseS").textContent = sol.release >= 0 ? "above level at release" : "below level at release";
+    $("rTime").textContent = sol.t.toFixed(3) + " s";
+    $("rTravel").textContent = `over ${sol.L.toFixed(1)} ft of travel`;
+    $("rDrop").textContent = (sol.drop*12).toFixed(1) + " in";
+    $("rSpeed").textContent = sol.vEnd.toFixed(1) + " mph";
+    $("timer").textContent = `t = ${sol.t.toFixed(3)} s`;
+    if (typeof updateMatch === "function") updateMatch();
+  }
+
+  // ---- animation ----
+  function play(){
+    if (!lastSol || !lastSol.ok || !svg._P) return;
+    cancelAnimationFrame(anim);
+    const slow = +$("slow").value;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const ball = document.getElementById("ball");
+    const T = lastSol.t, P = svg._P;
+    if (reduce){ const [x,y]=P(T); ball.setAttribute("cx",x); ball.setAttribute("cy",y); return; }
+    const t0 = performance.now();
+    const step = now => {
+      const t = Math.min(T, (now - t0)/1000/slow);
+      const [x,y] = P(t);
+      ball.setAttribute("cx",x); ball.setAttribute("cy",y);
+      $("timer").textContent = `t = ${t.toFixed(3)} s`;
+      if (t < T) anim = requestAnimationFrame(step);
+    };
+    anim = requestAnimationFrame(step);
+  }
+
+  // ---- controls ----
+  function syncAlt(){
+    $("aDist").textContent = ftin(S.dist);
+    $("aRel").textContent = ftin(S.rel);
+    $("aTgt").textContent = ftin(S.tgt);
+    $("aSpd").textContent = (S.spd*MPH).toFixed(1) + " ft/s";
+    $("aExt").textContent = ftin(S.ext);
+    $("aBat").textContent = ftin(S.bat);
+    $("batHint").textContent = `Sets the strike zone: ${ftin(ZB())} to ${ftin(ZT())} (${ZB().toFixed(2)}–${ZT().toFixed(2)} ft), from the hollow below the knee to midway between belt and shoulders in a normal stance.`;
+    document.querySelectorAll("#distChips .chip").forEach(c => c.setAttribute("aria-pressed", +c.dataset.v === S.dist ? "true":"false"));
+  }
+  function setVal(id, v){
+    const el = $(id); v = Math.min(+el.max, Math.max(+el.min, +v));
+    if (!isFinite(v)) return;
+    S[id] = v; el.value = v; $(id+"N").value = Math.round(v*100)/100;
+    cancelAnimationFrame(anim);
+    syncAlt(); render();
+  }
+  ids.forEach(id => {
+    $(id).value = S[id]; $(id+"N").value = Math.round(S[id]*100)/100;
+    $(id).addEventListener("input", e => setVal(id, e.target.value));
+    $(id+"N").addEventListener("change", e => setVal(id, e.target.value));
+  });
+  document.querySelectorAll("#distChips .chip").forEach(c => c.addEventListener("click", () => setVal("dist", c.dataset.v)));
+  ["exag","showStraight","marks"].forEach(id => $(id).addEventListener("change", () => { cancelAnimationFrame(anim); render(); }));
+  $("play").addEventListener("click", play);
+  // ---- front toss matching ----
+  // Three modes, one per button:
+  //  both  - same flight time AND approach angle: each release height has one distance and speed.
+  //  time  - same flight time only: the tosser's distance stays put; speed is set for the release height.
+  //  angle - same approach angle only: distance stays put; speed is set for the release height.
+  let ref = null;
+  const POSTURES = [
+    { name:"Sitting / low kneel", rel:1.6 },
+    { name:"Kneeling",            rel:2.0 },
+    { name:"Tall kneel",          rel:2.7 },
+    { name:"Seated on bucket",    rel:3.2 },
+    { name:"Crouched standing",   rel:3.8 },
+    { name:"Standing",            rel:4.5 },
+  ];
+  const MODES = {
+    both:  { title:"Matching flight time and approach angle", btn:"matchBtn" },
+    time:  { title:"Matching flight time only",               btn:"matchTimeBtn" },
+    angle: { title:"Matching approach angle only",            btn:"matchAngleBtn" },
+  };
+  // Standard front toss spot used for the single-goal buttons: tosser on a bucket, 25 ft out.
+  const TOSS_DIST = 25, TOSS_REL = 3.2;
+  const travel = () => S.dist - S.ext - PLATE_FRONT;
+
+  // Flight time of the flatter throw the diagram would draw for these inputs.
+  function flatTime(L, rel, tgt, spd){
+    const v = spd*MPH, k = G*L*L/(2*v*v), disc = L*L - 4*k*(k + tgt - rel);
+    if (disc < 0) return null;
+    const T = (L - Math.sqrt(disc))/(2*k);
+    return L/(v*Math.cos(Math.atan(T)));
+  }
+
+  function option(rel, mode, Lfix){
+    const tgt = ref.S.tgt, tanA = Math.tan(ref.approach*Math.PI/180);
+    let L, t;
+    if (mode === "both"){
+      if (tanA <= 0) return { ok:false, rel, why:"not possible at this angle" };
+      t = ref.t;
+      L = (rel - tgt + 0.5*G*t*t)/tanA;
+    } else {
+      L = Lfix == null ? travel() : Lfix;
+      if (mode === "time") t = ref.t;
+      else {
+        const t2 = 2*(L*tanA - (rel - tgt))/G;
+        if (!(t2 > 0)) return { ok:false, rel, L, why:"too steep from this distance at any speed" };
+        t = Math.sqrt(t2);
+      }
+    }
+    if (!(L >= 4) || L + PLATE_FRONT > 70) return { ok:false, rel, L, why:"distance out of range" };
+    const vx = L/t, vy0 = (tgt - rel + 0.5*G*t*t)/t, vyf = vy0 - G*t;
+    const spd = Math.hypot(vx, vy0)/MPH;
+    const approach = Math.atan2(-vyf, vx)*180/Math.PI;
+    if (spd < 10 || spd > 105) return { ok:false, rel, L, why:`would need ${spd.toFixed(0)} mph` };
+    const ft = flatTime(L, rel, tgt, spd);
+    if (ft == null || Math.abs(ft - t) > 0.01*t) return { ok:false, rel, L, why:"would need a high lob" };
+    return { ok:true, rel, L, spd, t, approach };
+  }
+
+  function apply(rel){
+    ref.choice = rel; ref.err = null;
+    const o = option(rel, ref.mode);
+    if (!o.ok){ ref.err = `A ${ftin(rel)} release can't match from here: ${o.why}.`; updateMatch(); return; }
+    S.tgt = ref.S.tgt; $("tgt").value = S.tgt; $("tgtN").value = S.tgt;
+    if (ref.mode === "both"){ setVal("ext", 0); setVal("dist", Math.round((o.L + PLATE_FRONT)*100)/100); }
+    setVal("rel", Math.round(rel*100)/100);
+    setVal("spd", Math.round(o.spd*10)/10);
+    updateMatch();
+  }
+
+  // Flight-time mode lists tosser distances (from the plate) at the current release height.
+  const TOSS_DISTS = [15, 20, 25, 30, 35, 40];
+  // Release heights offered as separate groups of distances in flight-time mode.
+  const TIME_GROUPS = [
+    { name:"Seated on a bucket", rel:3.2 },
+    { name:"Standing",           rel:4.5 },
+  ];
+  function applyDist(d, rel){
+    if (rel == null) rel = S.rel;
+    ref.choice = null; ref.err = null;
+    const o = option(rel, "time", d - PLATE_FRONT);
+    if (!o.ok){ ref.err = `From ${d} ft with a ${ftin(rel)} release the toss can't match: ${o.why}.`; updateMatch(); return; }
+    S.tgt = ref.S.tgt; $("tgt").value = S.tgt; $("tgtN").value = S.tgt;
+    setVal("ext", 0);
+    setVal("rel", Math.round(rel*100)/100);
+    setVal("dist", d);
+    setVal("spd", Math.round(o.spd*10)/10);
+    updateMatch();
+  }
+
+  function startMatch(mode){
+    if (!ref){
+      const g = solve();
+      if (!g.ok) return;
+      ref = { S:{...S}, t:g.t, approach:g.approach, L:g.L, rel:S.rel, spd:S.spd, mode, choice:null, err:null };
+      $("match").hidden = false;
+      // Flight-time mode keeps the release height already on slider 2 (the game pitch's, on first press).
+      if (mode !== "both"){ setVal("ext", 0); setVal("dist", TOSS_DIST); if (mode === "angle") setVal("rel", TOSS_REL); }
+      if (mode === "time") applyDist(TOSS_DIST);
+      else apply(mode === "both" ? 2.0 : TOSS_REL);
+      return;
+    }
+    // Already in front toss: keep the tosser where they are and re-match under the new rule.
+    ref.mode = mode;
+    let rel = S.rel;
+    if (mode === "both" && !option(rel, "both").ok) rel = 2.0;
+    if (mode === "time"){ setVal("ext", 0); applyDist(Math.round(S.dist*2)/2); }
+    else apply(rel);
+  }
+
+  function closeMatch(){
+    ref = null; $("match").hidden = true;
+    Object.values(MODES).forEach(v => $(v.btn).setAttribute("aria-pressed", "false"));
+  }
+
+  function updateMatch(){
+    if (!ref || $("match").hidden) return;
+    const c = solve(), m = ref.mode;
+    const tMatch = m !== "angle", aMatch = m !== "time";
+    $("matchMode").textContent = MODES[m].title;
+    Object.entries(MODES).forEach(([k,v]) => $(v.btn).setAttribute("aria-pressed", k === m ? "true" : "false"));
+
+    // options table
+    const hl = on => on ? ' class="good"' : '';
+    const byDist = m === "time";
+    $("optHead").innerHTML = `<tr><th>${byDist ? "Tosser distance" : "Tosser posture"}</th><th>Release</th><th>Ball travel</th><th>Toss speed</th><th>Flight time${tMatch?' ✓':''}</th><th>Approach${aMatch?' ✓':''}</th><th></th></tr>`;
+    let rowsSrc;
+    if (byDist){
+      const groups = TIME_GROUPS.slice();
+      if (!groups.some(g => Math.abs(g.rel - ref.rel) < 0.01)) groups.push({ name:"Same release as game pitch", rel:ref.rel });
+      rowsSrc = [];
+      groups.forEach(g => {
+        rowsSrc.push({ group:`${g.name} · ${ftin(g.rel)} release` });
+        TOSS_DISTS.forEach(d => rowsSrc.push({ name:`${d} ft from plate`, rel:g.rel, L:d - PLATE_FRONT, d }));
+      });
+    } else rowsSrc = POSTURES;
+    $("optBody").innerHTML = rowsSrc.map((p,i) => {
+      if (p.group) return `<tr class="grp"><td colspan="7">${p.group}</td></tr>`;
+      const o = option(p.rel, m, byDist ? p.L : undefined);
+      const sel = byDist ? (S.ext === 0 && Math.abs(S.dist - p.d) < 0.01 && Math.abs(S.rel - p.rel) < 0.01)
+                         : (ref.choice != null && Math.abs(ref.choice - p.rel) < 0.001);
+      const cells = o.ok
+        ? `<td>${o.L.toFixed(1)} ft</td><td>${o.spd.toFixed(1)} mph</td><td${hl(tMatch)}>${o.t.toFixed(3)} s</td><td${hl(aMatch)}>${o.approach.toFixed(1)}°</td>`
+        : `<td colspan="4" class="na">${o.why}</td>`;
+      return `<tr class="${sel?'sel':''}"><td>${p.name}</td><td>${ftin(p.rel)}</td>${cells}<td><button type="button" class="use" data-i="${i}" ${o.ok?'':'disabled'}>${sel?'Selected':'Use'}</button></td></tr>`;
+    }).join("");
+    $("optBody").querySelectorAll("button.use").forEach(btn => btn.addEventListener("click", () => {
+      const r = rowsSrc[+btn.dataset.i];
+      byDist ? applyDist(r.d, r.rel) : apply(r.rel);
+    }));
+
+    // fine-tune slider
+    const fine = $("tossRel");
+    if (byDist){
+      fine.min = 8; fine.max = 45; fine.step = 0.5; fine.value = S.dist;
+      $("tossLab").textContent = "Fine-tune distance";
+      const cd = option(S.rel, "time", S.dist - PLATE_FRONT);
+      $("tossRelV").textContent = `${S.dist.toFixed(1)} ft → ` + (cd.ok ? `${cd.spd.toFixed(1)} mph, arrives at ${cd.approach.toFixed(1)}°` : cd.why);
+    } else {
+    fine.min = 0.5; fine.max = 6; fine.step = 0.05;
+    $("tossLab").textContent = "Fine-tune release height";
+    const ch = ref.choice == null ? S.rel : ref.choice;
+    fine.value = ch;
+    const cur = option(ch, m);
+    $("tossRelV").textContent = ftin(ch) + (cur.ok
+      ? ` → ${cur.L.toFixed(1)} ft travel, ${cur.spd.toFixed(1)} mph` + (m === "time" ? `, arrives at ${cur.approach.toFixed(1)}°` : m === "angle" ? `, takes ${cur.t.toFixed(3)} s` : "")
+      : ` → ${cur.why}`);
+    }
+
+    // status line
+    const msg = $("matchMsg");
+    msg.hidden = !ref.err;
+    msg.textContent = ref.err || "";
+
+    // comparison table
+    const fmtD = (a,b,unit,dp) => { if (b==null) return "–"; const d=b-a; return (d>=0?"+":"−")+Math.abs(d).toFixed(dp)+unit; };
+    const rows = [
+      ["Flight time", ref.t, c.ok?c.t:null, " s", 3, 0.005, tMatch],
+      ["Approach angle (down)", ref.approach, c.ok?c.approach:null, "°", 1, 0.15, aMatch],
+      ["Release speed", ref.spd, S.spd, " mph", 1, null, false],
+      ["Ball travel distance", ref.L, c.L, " ft", 1, null, false],
+      ["Release height", ref.rel, S.rel, " ft", 2, null, false],
+      ["Height over plate", ref.S.tgt, S.tgt, " ft", 2, null, false],
+    ];
+    $("matchBody").innerHTML = rows.map(([k,a,b,u,dp,tol,target]) => {
+      const good = target && b!=null && Math.abs(b-a) <= tol;
+      const lab = target ? `${k} <span class="tag">target</span>` : k;
+      return `<tr><td>${lab}</td><td>${a.toFixed(dp)}${u}</td><td${good?' class="good"':''}>${b==null?"–":b.toFixed(dp)+u}</td><td>${fmtD(a,b,u,dp)}</td></tr>`;
+    }).join("");
+
+    const tail = " Extension is 0, so distance is where the ball leaves the hand.";
+    $("matchNote").textContent = (m === "both"
+      ? `Every option arrives in ${ref.t.toFixed(3)} s and drops in at ${ref.approach.toFixed(1)}° down, the same as the game pitch. Pick how the tosser releases the ball; the page sets the distance and speed.`
+      : m === "time"
+      ? `Every option arrives in ${ref.t.toFixed(3)} s, the same as the game pitch. The approach angle is not matched. Options are grouped by how the tosser releases the ball; pick a group and a distance and the page sets the speed. The fine-tune slider moves the distance at the current release height (${ftin(S.rel)}).`
+      : `Every option drops in at ${ref.approach.toFixed(1)}° down, the same as the game pitch, from the current ${travel().toFixed(1)} ft of travel. Flight time is not matched. Pick a release height and the page sets the speed. To try another distance, move slider 1 and click Match approach angle again.`) + tail;
+  }
+  $("tossRel").addEventListener("input", e => { if (!ref) return; ref.mode === "time" ? applyDist(+e.target.value) : apply(+e.target.value); });
+
+  $("matchBtn").addEventListener("click", () => startMatch("both"));
+  $("matchTimeBtn").addEventListener("click", () => startMatch("time"));
+  $("matchAngleBtn").addEventListener("click", () => startMatch("angle"));
+  $("backBtn").addEventListener("click", () => {
+    if (!ref) return;
+    const g = ref.S; closeMatch();
+    Object.keys(g).forEach(k => setVal(k, g[k]));
+  });
+
+  const PRESETS = {
+    mlb: { dist:60.5, spd:90, rel:5.75, tgt:2.5, ext:6.3, bat:73/12 },
+    ll:  { dist:45,   spd:50, rel:4.5,  tgt:2.0, ext:4.0, bat:58/12 }
+  };
+  document.querySelectorAll("button.reset").forEach(b => b.addEventListener("click", () => {
+    const p = PRESETS[b.dataset.preset];
+    closeMatch();
+    Object.keys(p).forEach(k => setVal(k, p[k]));
+  }));
+
+  syncAlt(); render();
+})();
+</script>
+
+</body>
+</html>
