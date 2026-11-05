@@ -72,6 +72,21 @@ body{margin:0;background:#fff}
 .ls-sub{margin:26px 0 0;font-size:18px;color:#555}
 .run-block h2{margin-top:0}
 details.card > summary, details.locks-box > summary{cursor:pointer;padding:2px 0;font-size:15px}
+/* Batters table: compact stat boxes (3 digits), name column stays in view while scrolling sideways. */
+#players table{width:auto;font-size:13px}
+#players th,#players td{padding:4px 3px;white-space:nowrap}
+#players th{font-size:11.5px;text-align:center;white-space:normal;max-width:4.5em;line-height:1.15;vertical-align:bottom}
+@media (max-width:640px){#players input[data-k="name"]{width:8em}}
+#players input{padding:5px 4px;font-size:14px;border:1px solid #c9d1d9;border-radius:6px;box-sizing:border-box}
+#players input[type=number]{width:3.4em;text-align:right;-moz-appearance:textfield;appearance:textfield}
+#players input[type=number]::-webkit-outer-spin-button,#players input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+#players input[data-k="sbSuccess"]{width:3.6em}
+#players input[data-k="name"]{width:9.5em}
+#players input[data-k="Pos"]{width:3em;text-align:center}
+#players td:first-child,#players th:first-child{position:sticky;left:0;z-index:2;background:#fff;text-align:right;color:#666}
+#players td:nth-child(2),#players th:nth-child(2){position:sticky;left:1.9em;z-index:2;background:#fff;box-shadow:4px 0 6px -4px #0003}
+#players th:first-child,#players th:nth-child(2){z-index:3;background:#fafafa}
+#players td:first-child,#players th:first-child{min-width:1.6em}
 #resultsCard{scroll-margin-top:calc(var(--sticky-top,0px) + 76px)}
 .best-order{display:grid;gap:6px}
 .best-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
