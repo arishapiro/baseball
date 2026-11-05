@@ -53,29 +53,69 @@ code{background:#f2f2f2;padding:1px 4px;border-radius:4px}
 #vizRunIndicator.runFlash{opacity:1;transform:scale(1.08)}
 #vizScore.runPulse{transform:scale(1.18);transition:transform .18s ease}
 </style>
+
+<style>
+/* Sections: three tabs (Batters, Batting order, Settings) that stay at the top while scrolling. */
+:root{--ls-accent:#1769e0;--ls-ink:#17212A;--ls-line:#dde3e8;--ls-bg:#f6f8fa}
+body{margin:0;background:#fff}
+.ls-head{padding:16px max(16px,env(safe-area-inset-left,0px)) 6px}
+.ls-head h1{margin:0 0 2px;font-size:clamp(22px,4vw,30px)}
+.ls-head .author{margin:0 !important}
+.ls-tabs{position:sticky;top:var(--sticky-top,env(safe-area-inset-top,0px));z-index:50;display:grid;grid-template-columns:repeat(3,1fr);
+  gap:6px;padding:8px max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));background:#fff;border-bottom:1px solid var(--ls-line)}
+.ls-tabs button{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 8px;min-height:44px;font-size:15px;font-weight:650;
+  border:1px solid var(--ls-line);border-radius:10px;background:var(--ls-bg);color:var(--ls-ink);white-space:nowrap}
+.ls-tabs button[aria-selected="true"]{background:var(--ls-ink);border-color:var(--ls-ink);color:#fff}
+.ls-n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:12px;background:#0001}
+.ls-tabs button[aria-selected="true"] .ls-n{background:#fff3}
+.ls-panel{padding:4px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.ls-sub{margin:26px 0 0;font-size:18px;color:#555}
+.run-block h2{margin-top:0}
+details.card > summary, details.locks-box > summary{cursor:pointer;padding:2px 0;font-size:15px}
+#resultsCard{scroll-margin-top:calc(var(--sticky-top,0px) + 76px)}
+.best-order{display:grid;gap:6px}
+.best-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.best-head h3{margin:0;font-size:20px}
+.best-runs{font-size:15px;color:#555}.best-runs b{font-size:24px;color:var(--ls-accent)}
+.best-note{margin:0}
+.best-list{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
+.best-list li{display:grid;grid-template-columns:34px 1fr;grid-template-areas:"slot nm" "slot st";column-gap:10px;align-items:center;
+  padding:9px 10px;border:1px solid var(--ls-line);border-radius:10px;background:var(--ls-bg)}
+.best-list .slot{grid-area:slot;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--ls-ink);color:#fff;font-weight:750;font-size:16px}
+.best-list .nm{grid-area:nm;font-weight:700;font-size:16px}
+.best-list .st{grid-area:st;font-size:12.5px;color:#666;font-variant-numeric:tabular-nums}
+details.more{margin-top:14px;border-top:1px solid var(--ls-line);padding-top:10px}
+details.more > summary{cursor:pointer;font-weight:650}
+details.locks-box{margin-top:18px;padding-top:14px;border-top:1px solid var(--ls-line)}
+details.locks-box[open] > summary{margin-bottom:8px}
+#licenseCard{margin:16px max(16px,env(safe-area-inset-left,0px)) 24px !important}
+@media (max-width:640px){
+  .ls-tabs button{font-size:14px;padding:9px 4px;gap:5px}
+  .ls-n{display:none}
+  .card{padding:12px;margin:12px 0}
+  .row > div{flex:1 1 140px}
+  .row input[type=number], .row select{width:100%}
+  #run{width:100%}
+}
+</style>
 </head>
 <body>
-<h1>Best Batting Lineup for your Little League Team</h1>
+<header class="ls-head"><h1>Best Batting Lineup</h1>
 <div class="author" style="margin:4px 0 18px 0;line-height:1.45">
   <b>Ari Shapiro, PhD</b><br>
   <a href="mailto:ariyshapiro@gmail.com">ariyshapiro@gmail.com</a>
 </div>
-<div class="card" id="descriptionSummary" style="margin-bottom:16px">
-  <p style="margin:0;line-height:1.55">Calculates the best batting lineup given your existing stats by simulating Little League games. The best batting lineup is the one that produces, on average, the most runs per game. Assumptions about the game—such as the number of innings, frequency of passed balls/wild pitches, chances of stealing, and other simulation parameters—can be changed in <b>Settings</b>.</p>
-</div>
-<p class="muted">Uses hits, walks, HBP, strikeouts, singles, doubles, triples, HR, ROE, FC, sacrifice flies, sacrifices, stolen bases, caught stealing, and wild pitches/passed balls. Assumes <b>no double plays</b>. Batted outs are split into ground balls and fly balls using adjustable assumptions, with configurable runner advancement on grounders and fielder's choices. Players with fewer than half as many PA as the team PA leader are automatically excluded.</p>
+</header>
 
-<div class="card" id="inputInstructions" style="margin-bottom:16px">
-<h2 style="margin-top:0">Getting started</h2>
-<p>Upload either a <b>GameChanger stats export CSV</b> or a simple batting-stat CSV using the format below. For a full GameChanger export, the simulator automatically reads the Batting section and ignores Pitching and Fielding statistics.</p>
-<p><b>Simple CSV format:</b></p>
-<pre style="overflow-x:auto;white-space:pre;padding:12px;border:1px solid #ddd;border-radius:8px;background:#f7f7f7;font-size:12px;line-height:1.45">First,Last,PA,H,1B,2B,3B,HR,BB,SO,HBP,SAC,SF,ROE,FC,SB,CS
-John,Smith,50,15,11,3,1,0,8,10,2,0,1,2,1,12,2
-Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
-<p class="muted" style="margin-bottom:0"><b>PA</b> = plate appearances, <b>H</b> = hits, <b>1B/2B/3B/HR</b> = singles/doubles/triples/home runs, <b>BB</b> = walks, <b>SO</b> = strikeouts, <b>HBP</b> = hit by pitch, <b>SAC</b> = sacrifice bunts, <b>SF</b> = sacrifice flies, <b>ROE</b> = reached on error, <b>FC</b> = fielder's choice, <b>SB</b> = stolen bases, and <b>CS</b> = caught stealing.</p>
-</div>
+<nav class="ls-tabs" role="tablist" aria-label="Sections">
+  <button type="button" role="tab" id="tabBtn-batters" aria-controls="tab-batters" data-tab="batters"><span class="ls-n">1</span>Batters</button>
+  <button type="button" role="tab" id="tabBtn-order" aria-controls="tab-order" data-tab="order"><span class="ls-n">2</span>Batting order</button>
+  <button type="button" role="tab" id="tabBtn-settings" aria-controls="tab-settings" data-tab="settings"><span class="ls-n">3</span>Settings</button>
+</nav>
+
+<section class="ls-panel" id="tab-batters" role="tabpanel" aria-labelledby="tabBtn-batters">
 <div class="card">
-<h2>Roster / CSV</h2>
+<h2>Load your team</h2>
 <div class="row">
   <div><label>Upload a different GameChanger CSV</label><input id="file" type="file" accept=".csv,text/csv"></div>
   <button id="useEmbedded" class="primary">Use uploaded Red Sox stats</button>
@@ -83,53 +123,23 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
 <p class="muted">This app has your Red Sox stats embedded. Each plate appearance is modeled as one weighted draw from actual event counts, including HR explicitly. You can also load a new CSV.</p>
 <div id="loadMsg"></div>
 </div>
+<div class="card" id="playersCard" style="display:none"><h2>Eligible players</h2><div id="eligibilityNote"></div><div id="players" class="wrap"></div><div id="excluded"></div></div>
+<details class="card" id="inputInstructions">
+<summary><b>How to format your stats file</b></summary>
+<p>Upload either a <b>GameChanger stats export CSV</b> or a simple batting-stat CSV using the format below. For a full GameChanger export, the simulator automatically reads the Batting section and ignores Pitching and Fielding statistics.</p>
+<p><b>Simple CSV format:</b></p>
+<pre style="overflow-x:auto;white-space:pre;padding:12px;border:1px solid #ddd;border-radius:8px;background:#f7f7f7;font-size:12px;line-height:1.45">First,Last,PA,H,1B,2B,3B,HR,BB,SO,HBP,SAC,SF,ROE,FC,SB,CS
+John,Smith,50,15,11,3,1,0,8,10,2,0,1,2,1,12,2
+Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
+<p class="muted" style="margin-bottom:0"><b>PA</b> = plate appearances, <b>H</b> = hits, <b>1B/2B/3B/HR</b> = singles/doubles/triples/home runs, <b>BB</b> = walks, <b>SO</b> = strikeouts, <b>HBP</b> = hit by pitch, <b>SAC</b> = sacrifice bunts, <b>SF</b> = sacrifice flies, <b>ROE</b> = reached on error, <b>FC</b> = fielder's choice, <b>SB</b> = stolen bases, and <b>CS</b> = caught stealing.</p>
+</details>
+</section>
 
-<div class="card" id="settings" style="display:none">
-<h2>Settings</h2>
-<div class="row">
-<div><label>Eligible player minimum PA (% of team PA leader)</label><input id="eligiblePaPct" type="number" min="0" max="1" step="0.05" value="0.50"><div class="muted" style="font-size:11px">0.50 = at least half as many PA as the team leader.</div></div>
-<div><label>Innings</label><input id="innings" type="number" min="1" max="9" value="7"></div>
-<div><label>% games to full innings (0–1)</label><input id="fullInningPct" type="number" min="0" max="1" step="0.01" value="1"></div>
-<div><label>Batting side</label><select id="homeAway"><option value="away">Away</option><option value="home">Home</option></select></div>
-<div><label>Win % (0–1)</label><input id="winPct" type="number" min="0" max="1" step="0.01" value="0.5"></div>
-<div><label>Simulations per lineup</label><input id="sims" type="number" min="50" max="20000" value="1000"></div>
-<div><label>Random baseline orders</label><input id="randomBaselineOrders" type="number" min="5" max="1000" value="50"></div>
-<div><label>Lineup evaluations / GA budget</label><input id="cands" type="number" min="50" max="100000" value="5000"></div>
-<div><label>Wild pitch / passed ball: once every N batters</label><input id="wpEvery" type="number" min="1" max="999" value="20"></div>
-<div><label>Default SB success if no CS</label><input id="defSb" type="number" min="0" max="1" step=".01" value=".75"></div>
-<div><label>Steal 2nd aggressiveness</label><input id="sb2Weight" type="number" min="0" max="2" step=".05" value="1.00"></div>
-<div><label>Steal 3rd aggressiveness</label><input id="sb3Weight" type="number" min="0" max="2" step=".05" value="0.55"></div>
-<div><label>Steal home aggressiveness</label><input id="sbhWeight" type="number" min="0" max="2" step=".05" value="0.15"></div>
-<div><label>Search</label><select id="mode"><option value="ga">Genetic algorithm</option><option value="smart">Smart random + baseball seeds</option><option value="current">Current order only</option><option value="all">All permutations if ≤9 hitters</option></select></div>
-</div>
-<p class="muted">Time-limited games use exactly one fewer inning than the Innings setting. If Batting side is Home, games judged as wins skip the team's final offensive half-inning.</p>
-<h3>Runner advancement</h3>
-<div class="row">
-<div><label>Score from 2nd on single</label><input id="s2single" type="number" min="0" max="1" step=".05" value=".60"></div>
-<div><label>Score from 1st on double</label><input id="s1double" type="number" min="0" max="1" step=".05" value=".45"></div>
-<div><label>Take 3rd from 1st on single</label><input id="f1single" type="number" min="0" max="1" step=".05" value=".35"></div>
-<div><label>Tag from 3rd on sac fly / fly out</label><input id="sfScore" type="number" min="0" max="1" step=".05" value=".85"></div>
-</div>
-<h3>Batted-out assumptions</h3>
-<div class="row">
-<div><label>Ground-ball rate on batted outs</label><input id="gbRate" type="number" min="0" max="1" step=".05" value=".55"></div>
-<div><label>Grounder: runner from 3rd scores</label><input id="gbScore3" type="number" min="0" max="1" step=".05" value=".35"></div>
-<div><label>Grounder: runner from 2nd takes 3rd</label><input id="gbAdv2" type="number" min="0" max="1" step=".05" value=".45"></div>
-<div><label>Grounder: force runner at 2nd if on 1st</label><input id="gbForce1" type="number" min="0" max="1" step=".05" value=".60"></div>
-<div><label>Fly out: runner from 2nd takes 3rd</label><input id="flyAdv2" type="number" min="0" max="1" step=".05" value=".25"></div>
-<div><label>FC: lead runner out</label><input id="fcLeadOut" type="number" min="0" max="1" step=".05" value=".75"></div>
-<div><label>FC: other runners advance</label><input id="fcOtherAdv" type="number" min="0" max="1" step=".05" value=".65"></div>
-</div>
-<p class="muted">For ordinary batted outs, strikeouts stay as strikeouts, while non-strikeout outs are randomly treated as ground balls or fly balls. Ground balls and fielders choices can produce one force out, but never a double play.</p>
-<p class="muted">Stolen-base attempt rate starts from <code>(SB + CS) / (H + BB + HBP)</code>, but SB is treated as <b>bases stolen</b>, not just attempts to steal second. Each simulated game gives every player a season-based steal budget of <code>(SB + CS) / GP</code>. A runner can try for 2nd, 3rd, or home in the same trip, but each attempt spends from that budget, so his later steal chance drops after he has already stolen or attempted. The base-specific aggressiveness settings make stealing 2nd more likely than stealing 3rd, and stealing home much rarer. Success rate is <code>SB / (SB + CS)</code>, or the default above if CS is unavailable.</p><p class="muted">The genetic algorithm seeds the population with current, OBP, OPS/SLG, speed, and baseball-style orders; keeps the best lineups each generation; then creates children by order-crossover and swap/insertion mutations.</p>
-<h3>Lineup locks <span class="muted" style="font-size:13px;font-weight:normal">(optional)</span></h3>
-<p class="muted">Force a player into a specific batting slot. The optimizer will keep locked players fixed and optimize the remaining slots. No batting slots are locked by default. You can leave this entire section unchanged for a normal optimization run.</p>
-<div class="row"><button id="defaultLocks">Reset to no locks</button><button id="clearLocks">Clear all locks</button></div>
-<div id="locks" class="wrap"></div>
-
-<div style="margin-top:28px;padding-top:22px;border-top:2px solid #ddd">
-  <h2 style="margin:0 0 6px">Start the simulation</h2>
-  <p style="margin:0 0 14px" class="muted">When your settings are ready, click <b>Run Optimizer</b> below to start simulating and comparing batting orders.</p>
+<section class="ls-panel" id="tab-order" role="tabpanel" aria-labelledby="tabBtn-order" hidden>
+<div class="card">
+<div class="run-block">
+  <h2 style="margin:0 0 6px">Find the best batting order</h2>
+  <p style="margin:0 0 14px" class="muted">Simulates thousands of games for many batting orders using the batters on the <b>Batters</b> tab and the assumptions on the <b>Settings</b> tab, and keeps the order that scores the most runs.</p>
   <button id="run" class="primary" style="font-size:18px;padding:12px 24px;font-weight:700">▶ Run Optimizer</button>
   <button id="stop" style="margin-left:8px">Stop</button>
 </div>
@@ -138,17 +148,19 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
   <b>Top 5 lineups so far</b>
   <div id="currentTestLineupText" style="margin-top:8px;line-height:1.55"></div>
 </div>
+<details class="locks-box">
+<summary><b>Lineup locks</b> <span class="muted">(optional) keep a batter in a set spot</span></summary>
+<p class="muted">Force a player into a specific batting slot. The optimizer will keep locked players fixed and optimize the remaining slots. No batting slots are locked by default. You can leave this entire section unchanged for a normal optimization run.</p>
+<div class="row"><button id="defaultLocks">Reset to no locks</button><button id="clearLocks">Clear all locks</button></div>
+<div id="locks" class="wrap"></div>
+</details>
 </div>
-
-
-<div class="card" id="resultsCard" style="display:none"><h2>Results</h2><div id="summary"></div><div id="results" class="wrap"></div></div>
+<div class="card" id="resultsCard" style="display:none"><div id="summary"></div><details class="more"><summary>All top lineups found</summary><div id="results" class="wrap"></div></details></div>
 <div class="card" id="positionDistributionCard" style="display:none">
 <h2>Player batting-position distributions — Top 30 lineups</h2>
 <p class="muted">Each player has a separate bar chart. The x-axis is batting position and the bar height is how many of the top 30 optimized lineups place that player in that position.</p>
 <div id="positionDistribution"></div>
 </div>
-
-
 <div class="card" id="gameVizCard" style="display:none">
 <h2>Watch one simulated game</h2>
 <p class="muted">This animates one game using the same hitter event probabilities, stolen-base budgets, runner-advancement rules, and inning setting as the optimizer. The simulator models only your offense, so the opponent score is shown as 0.</p>
@@ -208,7 +220,57 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
   </div>
 </div>
 </div>
+<h2 class="ls-sub">More analysis</h2>
+<div class="card" id="leverageCard" style="display:none"><h2>Lineup leverage / forced-slot analysis</h2><p class="muted">Choose a player and the app will force him into each batting slot, then re-optimize the rest of the lineup around him. This helps explain why a strong hitter or basestealer may be worth more in one spot than another.</p><div class="row"><div><label>Player</label><select id="leveragePlayer"></select></div><div><label>Simulations per lineup</label><input id="levSims" type="number" min="50" max="5000" value="500"></div><div><label>GA budget per slot</label><input id="levBudget" type="number" min="50" max="20000" value="1200"></div><button id="leverageBtn" class="primary">Run leverage analysis</button><button id="stopLeverage">Stop</button></div><div class="bar"><div id="levProg"></div></div><div id="leverageStatus"></div><div id="leverageResults" class="wrap"></div></div>
+<div class="card" id="explainCard" style="display:none"><h2>Bottom-order value + pairwise synergy</h2><p class="muted">These diagnostics help explain counterintuitive lineups where a stronger hitter is placed lower. Turnover value tests whether a player creates value as a second leadoff hitter in spots 7–9. Pairwise synergy estimates which hitter-before-hitter combinations create more runs than typical random adjacency.</p><h3>Turnover / bottom-order value</h3><div class="row"><div><label>Simulations per lineup</label><input id="turnSims" type="number" min="50" max="3000" value="350"></div><div><label>GA budget per forced slot</label><input id="turnBudget" type="number" min="50" max="10000" value="650"></div><button id="turnoverBtn" class="primary">Run turnover value</button><button id="stopTurnover">Stop</button></div><div class="bar"><div id="turnProg"></div></div><div id="turnoverStatus"></div><div id="turnoverResults" class="wrap"></div><h3>Pairwise synergy matrix</h3><div class="row"><div><label>Random adjacent lineups per pair</label><input id="pairSamples" type="number" min="5" max="500" value="60"></div><div><label>Simulations per lineup</label><input id="pairSims" type="number" min="25" max="2000" value="150"></div><button id="pairwiseBtn" class="primary">Run pairwise synergy</button><button id="stopPairwise">Stop</button></div><p class="muted tiny">The matrix value is runs/game above or below a randomized baseline when the row player bats immediately before the column player. Positive values suggest a useful sequence; negative values suggest that adjacency is less helpful.</p><div class="bar"><div id="pairProg"></div></div><div id="pairwiseStatus"></div><div id="pairwiseResults" class="wrap"></div></div>
+</section>
 
+<section class="ls-panel" id="tab-settings" role="tabpanel" aria-labelledby="tabBtn-settings" hidden>
+<div class="card" id="descriptionSummary" style="margin-bottom:16px">
+  <p style="margin:0;line-height:1.55">Calculates the best batting lineup given your existing stats by simulating Little League games. The best batting lineup is the one that produces, on average, the most runs per game. Assumptions about the game—such as the number of innings, frequency of passed balls/wild pitches, chances of stealing, and other simulation parameters—can be changed in <b>Settings</b>.</p>
+</div>
+<p class="muted">Uses hits, walks, HBP, strikeouts, singles, doubles, triples, HR, ROE, FC, sacrifice flies, sacrifices, stolen bases, caught stealing, and wild pitches/passed balls. Assumes <b>no double plays</b>. Batted outs are split into ground balls and fly balls using adjustable assumptions, with configurable runner advancement on grounders and fielder's choices. Players with fewer than half as many PA as the team PA leader are automatically excluded.</p>
+<div class="card" id="settings" style="display:none">
+<h2>Settings</h2>
+<div class="row">
+<div><label>Eligible player minimum PA (% of team PA leader)</label><input id="eligiblePaPct" type="number" min="0" max="1" step="0.05" value="0.50"><div class="muted" style="font-size:11px">0.50 = at least half as many PA as the team leader.</div></div>
+<div><label>Innings</label><input id="innings" type="number" min="1" max="9" value="7"></div>
+<div><label>% games to full innings (0–1)</label><input id="fullInningPct" type="number" min="0" max="1" step="0.01" value="1"></div>
+<div><label>Batting side</label><select id="homeAway"><option value="away">Away</option><option value="home">Home</option></select></div>
+<div><label>Win % (0–1)</label><input id="winPct" type="number" min="0" max="1" step="0.01" value="0.5"></div>
+<div><label>Simulations per lineup</label><input id="sims" type="number" min="50" max="20000" value="1000"></div>
+<div><label>Random baseline orders</label><input id="randomBaselineOrders" type="number" min="5" max="1000" value="50"></div>
+<div><label>Lineup evaluations / GA budget</label><input id="cands" type="number" min="50" max="100000" value="5000"></div>
+<div><label>Wild pitch / passed ball: once every N batters</label><input id="wpEvery" type="number" min="1" max="999" value="20"></div>
+<div><label>Default SB success if no CS</label><input id="defSb" type="number" min="0" max="1" step=".01" value=".75"></div>
+<div><label>Steal 2nd aggressiveness</label><input id="sb2Weight" type="number" min="0" max="2" step=".05" value="1.00"></div>
+<div><label>Steal 3rd aggressiveness</label><input id="sb3Weight" type="number" min="0" max="2" step=".05" value="0.55"></div>
+<div><label>Steal home aggressiveness</label><input id="sbhWeight" type="number" min="0" max="2" step=".05" value="0.15"></div>
+<div><label>Search</label><select id="mode"><option value="ga">Genetic algorithm</option><option value="smart">Smart random + baseball seeds</option><option value="current">Current order only</option><option value="all">All permutations if ≤9 hitters</option></select></div>
+</div>
+<p class="muted">Time-limited games use exactly one fewer inning than the Innings setting. If Batting side is Home, games judged as wins skip the team's final offensive half-inning.</p>
+<h3>Runner advancement</h3>
+<div class="row">
+<div><label>Score from 2nd on single</label><input id="s2single" type="number" min="0" max="1" step=".05" value=".60"></div>
+<div><label>Score from 1st on double</label><input id="s1double" type="number" min="0" max="1" step=".05" value=".45"></div>
+<div><label>Take 3rd from 1st on single</label><input id="f1single" type="number" min="0" max="1" step=".05" value=".35"></div>
+<div><label>Tag from 3rd on sac fly / fly out</label><input id="sfScore" type="number" min="0" max="1" step=".05" value=".85"></div>
+</div>
+<h3>Batted-out assumptions</h3>
+<div class="row">
+<div><label>Ground-ball rate on batted outs</label><input id="gbRate" type="number" min="0" max="1" step=".05" value=".55"></div>
+<div><label>Grounder: runner from 3rd scores</label><input id="gbScore3" type="number" min="0" max="1" step=".05" value=".35"></div>
+<div><label>Grounder: runner from 2nd takes 3rd</label><input id="gbAdv2" type="number" min="0" max="1" step=".05" value=".45"></div>
+<div><label>Grounder: force runner at 2nd if on 1st</label><input id="gbForce1" type="number" min="0" max="1" step=".05" value=".60"></div>
+<div><label>Fly out: runner from 2nd takes 3rd</label><input id="flyAdv2" type="number" min="0" max="1" step=".05" value=".25"></div>
+<div><label>FC: lead runner out</label><input id="fcLeadOut" type="number" min="0" max="1" step=".05" value=".75"></div>
+<div><label>FC: other runners advance</label><input id="fcOtherAdv" type="number" min="0" max="1" step=".05" value=".65"></div>
+</div>
+<p class="muted">For ordinary batted outs, strikeouts stay as strikeouts, while non-strikeout outs are randomly treated as ground balls or fly balls. Ground balls and fielders choices can produce one force out, but never a double play.</p>
+<p class="muted">Stolen-base attempt rate starts from <code>(SB + CS) / (H + BB + HBP)</code>, but SB is treated as <b>bases stolen</b>, not just attempts to steal second. Each simulated game gives every player a season-based steal budget of <code>(SB + CS) / GP</code>. A runner can try for 2nd, 3rd, or home in the same trip, but each attempt spends from that budget, so his later steal chance drops after he has already stolen or attempted. The base-specific aggressiveness settings make stealing 2nd more likely than stealing 3rd, and stealing home much rarer. Success rate is <code>SB / (SB + CS)</code>, or the default above if CS is unavailable.</p><p class="muted">The genetic algorithm seeds the population with current, OBP, OPS/SLG, speed, and baseball-style orders; keeps the best lineups each generation; then creates children by order-crossover and swap/insertion mutations.</p>
+
+
+</div>
 <div class="card" id="validationCard" style="display:none">
 <h2>Model validation / sanity check</h2>
 <p class="muted">This simulates each player’s plate appearances many times and compares the simulated cumulative batting line to the original GameChanger data. The optimizer is only useful if these values are close.</p>
@@ -220,13 +282,7 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
 <div id="validationStatus"></div>
 <div id="validationResults" class="wrap"></div>
 </div>
-
-<div class="card" id="playersCard" style="display:none"><h2>Eligible players</h2><div id="eligibilityNote"></div><div id="players" class="wrap"></div><div id="excluded"></div></div>
-
-
-<div class="card" id="leverageCard" style="display:none"><h2>Lineup leverage / forced-slot analysis</h2><p class="muted">Choose a player and the app will force him into each batting slot, then re-optimize the rest of the lineup around him. This helps explain why a strong hitter or basestealer may be worth more in one spot than another.</p><div class="row"><div><label>Player</label><select id="leveragePlayer"></select></div><div><label>Simulations per lineup</label><input id="levSims" type="number" min="50" max="5000" value="500"></div><div><label>GA budget per slot</label><input id="levBudget" type="number" min="50" max="20000" value="1200"></div><button id="leverageBtn" class="primary">Run leverage analysis</button><button id="stopLeverage">Stop</button></div><div class="bar"><div id="levProg"></div></div><div id="leverageStatus"></div><div id="leverageResults" class="wrap"></div></div>
-
-<div class="card" id="explainCard" style="display:none"><h2>Bottom-order value + pairwise synergy</h2><p class="muted">These diagnostics help explain counterintuitive lineups where a stronger hitter is placed lower. Turnover value tests whether a player creates value as a second leadoff hitter in spots 7–9. Pairwise synergy estimates which hitter-before-hitter combinations create more runs than typical random adjacency.</p><h3>Turnover / bottom-order value</h3><div class="row"><div><label>Simulations per lineup</label><input id="turnSims" type="number" min="50" max="3000" value="350"></div><div><label>GA budget per forced slot</label><input id="turnBudget" type="number" min="50" max="10000" value="650"></div><button id="turnoverBtn" class="primary">Run turnover value</button><button id="stopTurnover">Stop</button></div><div class="bar"><div id="turnProg"></div></div><div id="turnoverStatus"></div><div id="turnoverResults" class="wrap"></div><h3>Pairwise synergy matrix</h3><div class="row"><div><label>Random adjacent lineups per pair</label><input id="pairSamples" type="number" min="5" max="500" value="60"></div><div><label>Simulations per lineup</label><input id="pairSims" type="number" min="25" max="2000" value="150"></div><button id="pairwiseBtn" class="primary">Run pairwise synergy</button><button id="stopPairwise">Stop</button></div><p class="muted tiny">The matrix value is runs/game above or below a randomized baseline when the row player bats immediately before the column player. Positive values suggest a useful sequence; negative values suggest that adjacency is less helpful.</p><div class="bar"><div id="pairProg"></div></div><div id="pairwiseStatus"></div><div id="pairwiseResults" class="wrap"></div></div>
+</section>
 
 <script>
 const EMBEDDED = [{"GP": 16.0, "PA": 46.0, "AB": 39.0, "AVG": 0.308, "OBP": 0.413, "OPS": 0.875, "SLG": 0.462, "H": 12.0, "1B": 7.0, "2B": 4.0, "3B": 1.0, "HR": 0.0, "RBI": 6.0, "R": 7.0, "BB": 6.0, "SO": 13.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 5.0, "CS": 0.0, "SB%": 100.0, "name": "Basher, mediocre runner"}, {"GP": 15.0, "PA": 42.0, "AB": 32.0, "AVG": 0.25, "OBP": 0.429, "OPS": 0.804, "SLG": 0.375, "H": 8.0, "1B": 4.0, "2B": 4.0, "3B": 0.0, "HR": 0.0, "RBI": 5.0, "R": 6.0, "BB": 9.0, "SO": 17.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 7.0, "CS": 1.0, "SB%": 87.5, "name": "Basher, fast runner"}, {"GP": 16.0, "PA": 50.0, "AB": 32.0, "AVG": 0.469, "OBP": 0.66, "OPS": 1.16, "SLG": 0.5, "H": 15.0, "1B": 14.0, "2B": 1.0, "3B": 0.0, "HR": 0.0, "RBI": 7.0, "R": 19.0, "BB": 12.0, "SO": 6.0, "HBP": 6.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 37.0, "CS": 2.0, "SB%": 94.87, "name": "OBP leader"}, {"GP": 12.0, "PA": 37.0, "AB": 33.0, "AVG": 0.576, "OBP": 0.622, "OPS": 1.258, "SLG": 0.636, "H": 19.0, "1B": 17.0, "2B": 2.0, "3B": 0.0, "HR": 0.0, "RBI": 13.0, "R": 8.0, "BB": 4.0, "SO": 1.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 10.0, "CS": 2.0, "SB%": 83.33, "name": "Contact hitter, never strikes out"}, {"GP": 17.0, "PA": 41.0, "AB": 28.0, "AVG": 0.143, "OBP": 0.415, "OPS": 0.557, "SLG": 0.143, "H": 4.0, "1B": 4.0, "2B": 0.0, "3B": 0.0, "HR": 0.0, "RBI": 4.0, "R": 4.0, "BB": 11.0, "SO": 14.0, "HBP": 2.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 1.0, "CS": 0.0, "SB%": 100.0, "name": "Walks or strikes out"}, {"GP": 15.0, "PA": 33.0, "AB": 26.0, "AVG": 0.115, "OBP": 0.303, "OPS": 0.418, "SLG": 0.115, "H": 3.0, "1B": 3.0, "2B": 0.0, "3B": 0.0, "HR": 0.0, "RBI": 3.0, "R": 4.0, "BB": 6.0, "SO": 18.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 1.0, "CS": 2.0, "SB%": 33.33, "name": "Worst batter"}, {"GP": 17.0, "PA": 45.0, "AB": 37.0, "AVG": 0.27, "OBP": 0.386, "OPS": 0.684, "SLG": 0.297, "H": 10.0, "1B": 9.0, "2B": 1.0, "3B": 0.0, "HR": 0.0, "RBI": 3.0, "R": 5.0, "BB": 7.0, "SO": 11.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 10.0, "CS": 0.0, "SB%": 100.0, "name": "Below par hitter, fast"}, {"GP": 12.0, "PA": 28.0, "AB": 24.0, "AVG": 0.333, "OBP": 0.429, "OPS": 0.762, "SLG": 0.333, "H": 8.0, "1B": 8.0, "2B": 0.0, "3B": 0.0, "HR": 0.0, "RBI": 5.0, "R": 4.0, "BB": 3.0, "SO": 9.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 3.0, "CS": 0.0, "SB%": 100.0, "name": "Unreliable hitter"}, {"GP": 1.0, "PA": 2.0, "AB": 2.0, "AVG": 1.0, "OBP": 1.0, "OPS": 3.0, "SLG": 2.0, "H": 2.0, "1B": 0.0, "2B": 2.0, "3B": 0.0, "HR": 0.0, "RBI": 4.0, "R": 0.0, "BB": 0.0, "SO": 0.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 0.0, "CS": 0.0, "SB%": 0, "name": "ignore (sub)"}, {"GP": 11.0, "PA": 28.0, "AB": 19.0, "AVG": 0.421, "OBP": 0.607, "OPS": 1.239, "SLG": 0.632, "H": 8.0, "1B": 4.0, "2B": 4.0, "3B": 0.0, "HR": 0.0, "RBI": 5.0, "R": 6.0, "BB": 8.0, "SO": 2.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 2.0, "CS": 0.0, "SB%": 100.0, "name": "Basher, 2nd highest OPS but slow"}, {"GP": 14.0, "PA": 45.0, "AB": 31.0, "AVG": 0.387, "OBP": 0.578, "OPS": 1.191, "SLG": 0.613, "H": 12.0, "1B": 5.0, "2B": 7.0, "3B": 0.0, "HR": 0.0, "RBI": 9.0, "R": 16.0, "BB": 12.0, "SO": 9.0, "HBP": 2.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 8.0, "CS": 0.0, "SB%": 100.0, "name": "2nd best hitter"}, {"GP": 15.0, "PA": 46.0, "AB": 38.0, "AVG": 0.5, "OBP": 0.587, "OPS": 1.219, "SLG": 0.632, "H": 19.0, "1B": 14.0, "2B": 5.0, "3B": 0.0, "HR": 0.0, "RBI": 18.0, "R": 16.0, "BB": 8.0, "SO": 2.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 17.0, "CS": 1.0, "SB%": 94.44, "name": "Best hitter"}, {"GP": 14.0, "PA": 38.0, "AB": 30.0, "AVG": 0.267, "OBP": 0.421, "OPS": 0.688, "SLG": 0.267, "H": 8.0, "1B": 8.0, "2B": 0.0, "3B": 0.0, "HR": 0.0, "RBI": 3.0, "R": 8.0, "BB": 8.0, "SO": 6.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 18.0, "CS": 0.0, "SB%": 100.0, "name": "Below par hitter, speed demon"}];
@@ -1038,8 +1094,13 @@ function show(top,stopped,obpBaseline,opsBaseline,reverseObpBaseline,reverseOpsB
  let rankRevObp=top.findIndex(r=>key(r.order)===key(reverseObpBaseline.order));
  let rankRevOps=top.findIndex(r=>key(r.order)===key(reverseOpsBaseline.order));
  let method=mode==='ga'?'Genetic algorithm':(mode==='smart'?'Smart/random search':mode);
- summary.innerHTML=`<p class="ok">${stopped?'Stopped early. ':''}Best: ${b.avg.toFixed(3)} runs/game using ${method}</p>
- <p><b>Locked slots:</b> ${lockSummary()}</p>
+ summary.innerHTML=`<div class="best-order">
+  <div class="best-head"><h3>Best batting order</h3><span class="best-runs"><b>${b.avg.toFixed(2)}</b> runs/game</span></div>
+  <p class="muted best-note">${stopped?'Stopped early. ':''}${signed(diffRandom)} runs/game (${signedPct(pctRandom)}) vs. a random order · ${esc(method)}</p>
+  <ol class="best-list">${b.order.map((p,i)=>`<li><span class="slot">${i+1}</span><span class="nm">${esc(p.name)}</span><span class="st">OBP ${statOBP(p).toFixed(3)} · OPS ${statOPS(p).toFixed(3)}</span></li>`).join('')}</ol>
+  <p class="tiny muted"><b>Locked slots:</b> ${lockSummary()}</p>
+ </div>
+ <details class="more"><summary>Compare with other orders</summary>
  <table><thead><tr><th>Lineup</th><th>Runs/game</th><th>Best advantage</th><th>Rank shown</th></tr></thead><tbody>
  <tr><td>Best optimized</td><td>${b.avg.toFixed(3)}</td><td>—</td><td>1</td></tr>
  <tr><td>Random-order average (${randomBaseline.count} orders)</td><td>${randomBaseline.avg.toFixed(3)}</td><td>${signed(diffRandom)} (${signedPct(pctRandom)})</td><td>baseline average</td></tr>
@@ -1053,11 +1114,13 @@ function show(top,stopped,obpBaseline,opsBaseline,reverseObpBaseline,reverseOpsB
  <p><b>OPS order:</b> ${opsBaseline.order.map(p=>esc(p.name)).join(' → ')}</p>
  <p><b>Reverse OBP order:</b> ${reverseObpBaseline.order.map(p=>esc(p.name)).join(' → ')}</p>
  <p><b>Reverse OPS order:</b> ${reverseOpsBaseline.order.map(p=>esc(p.name)).join(' → ')}</p>
- <h3>Best optimized order</h3>
- <ol>${b.order.map(p=>`<li>${esc(p.name)} <span class="muted">(OBP ${statOBP(p).toFixed(3)}, SLG-ish ${slug(p).toFixed(3)}, OPS ${statOPS(p).toFixed(3)}, SB att/on-base ${p.sbAttempt.toFixed(2)}, SB att/game ${p.expectedStealAttemptsPerGame.toFixed(2)}, SB succ ${p.sbSuccess.toFixed(2)})</span></li>`).join('')}</ol>`;
+ <h3>Best optimized order, with stats</h3>
+ <ol>${b.order.map(p=>`<li>${esc(p.name)} <span class="muted">(OBP ${statOBP(p).toFixed(3)}, SLG-ish ${slug(p).toFixed(3)}, OPS ${statOPS(p).toFixed(3)}, SB att/on-base ${p.sbAttempt.toFixed(2)}, SB att/game ${p.expectedStealAttemptsPerGame.toFixed(2)}, SB succ ${p.sbSuccess.toFixed(2)})</span></li>`).join('')}</ol>
+ </details>`;
  results.innerHTML='<table><thead><tr><th>Rank</th><th>Type</th><th>Runs/game</th><th>Vs Random Avg</th><th>Vs OBP</th><th>Vs OPS</th><th>Vs Rev OBP</th><th>Vs Rev OPS</th><th>Lineup</th></tr></thead><tbody>'+top.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.label||'Candidate')}</td><td>${r.avg.toFixed(3)}</td><td>${signed(r.avg-randomBaseline.avg)}</td><td>${signed(r.avg-obpBaseline.avg)}</td><td>${signed(r.avg-opsBaseline.avg)}</td><td>${signed(r.avg-reverseObpBaseline.avg)}</td><td>${signed(r.avg-reverseOpsBaseline.avg)}</td><td>${r.order.map(p=>esc(p.name)).join(' → ')}</td></tr>`).join('')+'</tbody></table>';
  renderPositionDistribution(top);
  statusEl.innerHTML='<p class="ok">Done.</p>';
+ try{ resultsCardEl.scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){}
 }
 
 
@@ -1671,6 +1734,27 @@ document.getElementById('run').onclick=async()=>{
 }; document.getElementById('stop').onclick=()=>stop=true; document.getElementById('defaultLocks').onclick=()=>{setDefaultLocks();renderLocks();}; document.getElementById('clearLocks').onclick=clearAllLocks; document.getElementById('validateBtn').onclick=runValidation; document.getElementById('calibrateBtn').onclick=calibrateAssumptions; document.getElementById('leverageBtn').onclick=runLeverage; document.getElementById('stopLeverage').onclick=()=>stop=true; document.getElementById('turnoverBtn').onclick=runTurnoverValue; document.getElementById('stopTurnover').onclick=()=>stop=true; document.getElementById('pairwiseBtn').onclick=runPairwiseSynergy; document.getElementById('stopPairwise').onclick=()=>stop=true;
 normalize(EMBEDDED);
 setTimeout(()=>{try{updateVizLineupOptions();}catch(e){}},0);
+
+// ---- Sections: Batters / Batting order / Settings ----
+(function(){
+  const tabs=[...document.querySelectorAll('.ls-tabs [data-tab]')];
+  function show(name, focus){
+    tabs.forEach(t=>{const on=t.dataset.tab===name;t.setAttribute('aria-selected',on?'true':'false');t.tabIndex=on?0:-1;document.getElementById('tab-'+t.dataset.tab).hidden=!on;});
+    try{localStorage.setItem('lsTab',name);}catch(_){}
+    if(focus) document.getElementById('tabBtn-'+name).focus();
+    window.scrollTo(0,0);
+  }
+  tabs.forEach((t,i)=>{
+    t.addEventListener('click',()=>show(t.dataset.tab));
+    t.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'||e.key==='ArrowLeft'){ const j=(i+(e.key==='ArrowRight'?1:tabs.length-1))%tabs.length; show(tabs[j].dataset.tab,true); } });
+  });
+  let start='batters';
+  const h=(location.hash||'').slice(1);
+  if(['batters','order','settings'].includes(h)) start=h;
+  else { try{ const v=localStorage.getItem('lsTab'); if(v && document.getElementById('tab-'+v)) start=v; }catch(_){} }
+  show(start);
+  window.lsShowTab=show;
+})();
 </script>
 <div class="card" id="licenseCard" style="margin-top:16px">
   <h2>Copyright &amp; License</h2>
