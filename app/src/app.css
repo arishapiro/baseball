@@ -36,3 +36,6 @@ body[data-dc-tool]{padding-top:calc(var(--dc-bar-h) + env(safe-area-inset-top,0p
 
 /* Tool pages that pin something to the top of the screen sit it just under the app bar. */
 body[data-dc-tool]{--sticky-top:calc(var(--dc-bar-h) + env(safe-area-inset-top,0px))}
+
+/* Sideways phones: a slimmer top bar leaves more room for the tools. */
+@media (orientation:landscape) and (max-height:500px){ :root{--dc-bar-h:40px} .dc-title{font-size:17px} }
