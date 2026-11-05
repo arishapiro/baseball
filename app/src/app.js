@@ -11,14 +11,3 @@
   });
 })();
 
-// Pitch Path Lab on a phone: the diagram scrolls sideways, so start it at the home plate end.
-(function () {
-  if (document.body.getAttribute("data-dc-tool") !== "pitch.html") return;
-  var svg = document.getElementById("field");
-  if (!svg || !svg.parentNode) return;
-  var box = document.createElement("div");
-  box.className = "dc-scroll";
-  svg.parentNode.insertBefore(box, svg);
-  box.appendChild(svg);
-  box.scrollLeft = box.scrollWidth;
-})();

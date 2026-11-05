@@ -32,10 +32,30 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15p
 header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px}
 h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,40px);letter-spacing:.01em;line-height:1;margin:0;text-transform:uppercase;text-wrap:balance}
 header p{margin:0;color:var(--muted);max-width:60ch}
-.stage{background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.stage-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 14px;border-bottom:1px solid var(--line)}
-.stage-bar .grow{flex:1}
+.stage-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.bar-group{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.seg{display:inline-flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--bg)}
+.seg button{border:0;border-radius:0;background:transparent;padding:9px 14px;min-height:38px}
+.seg button + button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg.sub{border-color:var(--pitch)}
+.seg.sub button[aria-pressed="true"]{background:var(--pitch);color:#fff}
+.seg-lab{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:0 8px 0 10px}
+.presets .seg-lab{padding:0}
+.presets{margin-left:auto}
+details.display{flex-basis:100%;border-top:1px solid var(--line);padding-top:8px}
+details.display summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);list-style-position:inside;padding:4px 0}
+.display-body{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding-top:8px}
+.display-body label.small{display:inline-flex;align-items:center;gap:8px}
+.viz{background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.viz-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
 svg#field{display:block;width:100%;height:auto}
+.viz-strip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:10px 14px;border-top:1px solid var(--line)}
+.viz-strip .mini{display:none}
+.mini .mk{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;line-height:1.1}
+.mini b{font-family:var(--display);font-size:20px;line-height:1.1;font-variant-numeric:tabular-nums}
+#mApproach{color:var(--pitch)}
+button.step{width:34px;height:34px;padding:0;font-size:18px;line-height:1;flex:none;display:inline-grid;place-items:center}
 button,.chip{font:600 13px/1 var(--body);border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:4px;padding:8px 12px;cursor:pointer}
 button.primary{background:var(--pitch);border-color:var(--pitch);color:#fff;min-width:96px}
 button:focus-visible,.chip:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--straight);outline-offset:2px}
@@ -90,7 +110,6 @@ select{font:13px var(--body);background:var(--bg);color:var(--ink);border:1px so
 #matchMsg{margin:0;color:var(--pitch);font-weight:600}
 .match .mode{margin:2px 0 0;font-weight:600;color:var(--pitch);font-size:14px}
 .match-table .tag{font:600 10px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--straight);border:1px solid var(--straight);border-radius:3px;padding:2px 4px;margin-left:6px;vertical-align:1px}
-.stage-bar button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .toss-fine input[type=range]{flex:1;min-width:160px;accent-color:var(--pitch)}
 .toss-fine .num{font-family:var(--mono);font-size:13px;color:var(--ink)}
 .title-block{display:grid;gap:6px}
@@ -104,6 +123,87 @@ footer.credit{border-top:1px solid var(--line);padding-top:12px;font-size:13px;c
 
 svg text{font-family:var(--body)}
 @media (max-width:560px){.readouts{grid-template-columns:1fr 1fr}.ro.hero{grid-column:1/-1}.ro .v{font-size:22px}}
+
+/* ---------- Phones (portrait and narrow windows) ----------
+   The diagram sticks to the top while the controls scroll under it, and keeps a readable
+   fixed width that scrolls sideways. --sticky-top lets a host app with its own top bar push it down. */
+@media (max-width:700px){
+  .wrap{gap:12px;padding-block:14px 32px}
+  header{gap:6px}
+  header > p{font-size:13.5px}
+  h1{font-size:30px}
+  .byline{font-size:13px}
+  .stage-bar{padding:10px 12px;gap:10px}
+  .bar-group{width:100%}
+  .seg{flex:1 1 100%}
+  .seg button{flex:1;padding:10px 8px;font-size:14px;min-height:42px;white-space:nowrap}
+  .seg.sub .seg-lab{padding:0 6px 0 8px}
+  .presets{margin-left:0}
+  .presets .chip{padding:8px 10px;font-size:13px}
+  details.display summary{font-size:14px}
+  .display-body{gap:10px 16px}
+  .display-body select{font-size:14px;padding:6px}
+
+  .viz{position:sticky;top:var(--sticky-top, env(safe-area-inset-top,0px));z-index:5;
+       box-shadow:0 6px 14px -10px rgba(0,0,0,.45)}
+  svg#field{min-width:760px}
+  svg#field text{font-size:14px}
+  svg#field text[font-size="13"]{font-size:16px}
+  .viz-strip{padding:8px 10px;gap:6px 14px;flex-wrap:nowrap}
+  .viz-strip .timer{display:none}
+  .viz-strip .mini{display:block;white-space:nowrap}
+  .mini b{font-size:18px}
+  #play{min-width:0;padding:10px 14px;font-size:15px;white-space:nowrap;flex:none}
+
+  .readouts{grid-template-columns:1fr 1fr}
+  .ro{padding:9px 11px}
+  .ro .v{font-size:20px}
+  .ro.hero .v{font-size:34px}
+  .ro .s{font-size:11.5px}
+
+  .controls{gap:10px}
+  .ctl{padding:12px;gap:6px}
+  .ctl-row{gap:8px}
+  .num input{width:62px;font-size:15px;padding:6px 4px}
+  button.step{width:40px;height:40px;font-size:20px}
+  .ctl .hint{font-size:12px}
+  .chips .chip{padding:7px 10px;font-size:12.5px}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:40px;background:transparent}
+  input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:var(--line)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;margin-top:-11px;border-radius:50%;
+    background:var(--pitch);border:3px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+  input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:var(--line)}
+  input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--pitch);border:3px solid var(--surface)}
+
+  .match{padding:12px}
+  .match h2{font-size:20px}
+  .match-table{min-width:0;font-size:12.5px}
+  .match-table th,.match-table td{padding:6px 6px}
+  .match-table td:first-child{white-space:normal}
+  /* Front toss options become cards */
+  .match-table.opts thead{display:none}
+  .match-table.opts, .match-table.opts tbody{display:block}
+  .match-table.opts tr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:2px 8px;align-items:center;
+    padding:10px 4px;border-bottom:1px solid var(--line)}
+  .match-table.opts td{border:0;padding:0;text-align:left;white-space:nowrap;font-family:var(--body);font-size:14px;font-variant-numeric:tabular-nums}
+  .match-table.opts tr.grp td{white-space:normal;font-size:12px}
+  .match-table.opts td:first-child{grid-column:1 / 5;font-family:var(--body);font-weight:600;color:var(--ink);font-size:14px}
+  .match-table.opts td:nth-child(2){grid-column:5;grid-row:1;text-align:right;color:var(--muted)}
+  .match-table.opts td[data-l]::before{content:attr(data-l);display:block;font:600 9.5px/1.2 var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+  .match-table.opts td.act{grid-column:5;grid-row:2;justify-self:end}
+  .match-table.opts td.na{grid-column:1 / 5}
+  .match-table.opts tr.grp{display:block;padding:12px 6px 6px;border-bottom:0}
+  .match-table.opts tr.sel{background:var(--bg);border-radius:6px}
+  .match-table button.use{padding:9px 14px;font-size:13px}
+}
+/* Phone turned sideways: the whole field fits across the screen, so show the diagram first. */
+@media (orientation:landscape) and (max-height:500px){
+  .wrap{gap:10px;padding-block:10px 28px}
+  .viz{order:-1;position:static}
+  header{order:-2;align-items:center}
+  header > p{display:none}
+  h1{font-size:24px}
+}
 </style>
 <style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font-size:14px}[hidden]{display:none!important}</style>
 </head>
@@ -119,41 +219,68 @@ svg text{font-family:var(--body)}
     <p>Side view of a pitch from release to the front of home plate. The red curve is the ball's path under gravity; the dashed blue line is where it would go if gravity switched off.</p>
   </header>
 
-  <section class="stage" aria-label="Side view of the pitch">
-    <div class="stage-bar">
-      <button id="play" class="primary" type="button">▶ Throw</button>
-      <button type="button" class="reset" data-preset="mlb">Reset: MLB 60′6″ · 90 mph</button>
-      <button type="button" class="reset" data-preset="ll">Reset: Little League 45′ · 50 mph</button>
-      <button type="button" id="matchBtn" title="Front toss with the same flight time and approach angle as the game pitch">Match with front toss</button>
-      <button type="button" id="matchTimeBtn" title="Front toss with the same flight time as the game pitch">Match flight time</button>
-      <button type="button" id="matchAngleBtn" title="Front toss with the same approach angle as the game pitch">Match approach angle</button>
-      <label class="small" for="slow">Playback</label>
-      <select id="slow">
-        <option value="1">Real time</option>
-        <option value="4">4× slower</option>
-        <option value="10" selected>10× slower</option>
-        <option value="25">25× slower</option>
-      </select>
-      <span class="timer" id="timer">t = 0.000 s</span>
-      <span class="grow"></span>
-      <label class="check"><input type="checkbox" id="showStraight" checked> No-gravity line</label>
-      <label class="small" for="marks">Time marks</label>
-      <select id="marks">
-        <option value="0">Off</option>
-        <option value="0.1">Every 0.1 s</option>
-        <option value="0.05">Every 0.05 s</option>
-        <option value="0.02" selected>Every 0.02 s</option>
-        <option value="0.01">Every 0.01 s</option>
-      </select>
-      <label class="small" for="exag">Height scale</label>
-      <select id="exag">
-        <option value="1">True scale</option>
-        <option value="2">2× tall</option>
-        <option value="3" selected>3× tall</option>
-        <option value="4">4× tall</option>
-      </select>
+  <section class="stage-bar" aria-label="Pitch type and display">
+    <div class="bar-group">
+      <div class="seg" role="group" aria-label="Pitch type">
+        <button type="button" id="gameBtn" aria-pressed="true">Game pitch</button>
+        <button type="button" id="tossBtn" aria-pressed="false">Front toss</button>
+      </div>
+      <div class="seg sub" id="tossModes" role="group" aria-label="What the front toss matches" hidden>
+        <span class="seg-lab">Match</span>
+        <button type="button" id="matchBtn" title="Same flight time and approach angle as the game pitch">Both</button>
+        <button type="button" id="matchTimeBtn" title="Same flight time as the game pitch">Flight time</button>
+        <button type="button" id="matchAngleBtn" title="Same approach angle as the game pitch">Angle</button>
+      </div>
     </div>
-    <svg id="field" viewBox="0 0 1000 420" role="img" aria-label="Pitch trajectory diagram"></svg>
+    <div class="bar-group presets" role="group" aria-label="Presets">
+      <span class="seg-lab">Presets</span>
+      <button type="button" class="chip reset" data-preset="mlb">MLB 60′6″ · 90</button>
+      <button type="button" class="chip reset" data-preset="ll">LL 45′ · 50</button>
+    </div>
+    <details class="display" id="displayOpts">
+      <summary>Display</summary>
+      <div class="display-body">
+        <label class="small">Playback
+          <select id="slow">
+            <option value="1">Real time</option>
+            <option value="4">4× slower</option>
+            <option value="10" selected>10× slower</option>
+            <option value="25">25× slower</option>
+          </select>
+        </label>
+        <label class="small">Time marks
+          <select id="marks">
+            <option value="0">Off</option>
+            <option value="0.1">Every 0.1 s</option>
+            <option value="0.05">Every 0.05 s</option>
+            <option value="0.02" selected>Every 0.02 s</option>
+            <option value="0.01">Every 0.01 s</option>
+          </select>
+        </label>
+        <label class="small">Height scale
+          <select id="exag">
+            <option value="1">True scale</option>
+            <option value="2">2× tall</option>
+            <option value="3" selected>3× tall</option>
+            <option value="4">4× tall</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="showStraight" checked> No-gravity line</label>
+      </div>
+    </details>
+  </section>
+
+  <section class="viz" aria-label="Side view of the pitch">
+    <div class="viz-scroll" id="vizScroll">
+      <svg id="field" viewBox="0 0 1000 420" role="img" aria-label="Pitch trajectory diagram"></svg>
+    </div>
+    <div class="viz-strip">
+      <button id="play" class="primary" type="button">▶ Throw</button>
+      <span class="timer" id="timer">t = 0.000 s</span>
+      <span class="mini"><span class="mk">Approach</span><b id="mApproach">–</b></span>
+      <span class="mini"><span class="mk">Flight</span><b id="mTime">–</b></span>
+      <span class="mini"><span class="mk">Speed</span><b id="mSpeed">–</b></span>
+    </div>
   </section>
 
   <div id="warn" class="warn" hidden></div>
@@ -172,9 +299,6 @@ svg text{font-family:var(--body)}
         <h2>Front toss vs. game pitch</h2>
         <p class="mode" id="matchMode"></p>
         <p class="small" id="matchNote"></p>
-      </div>
-      <div class="match-actions">
-        <button type="button" id="backBtn">Back to game pitch</button>
       </div>
     </div>
     <p class="small" id="matchMsg" hidden></p>
@@ -196,7 +320,7 @@ svg text{font-family:var(--body)}
   <section class="controls">
     <div class="ctl">
       <div class="ctl-head"><span class="n">1</span><span class="lab">Distance to the plate</span><span class="alt" id="aDist"></span></div>
-      <div class="ctl-row"><input type="range" id="dist" min="5" max="70" step="0.5"><span class="num"><input type="number" id="distN" min="5" max="70" step="0.5" aria-label="Distance in feet">ft</span></div>
+      <div class="ctl-row"><button type="button" class="step" data-for="dist" data-d="-0.5" aria-label="Decrease">−</button><input type="range" id="dist" min="5" max="70" step="0.5"><button type="button" class="step" data-for="dist" data-d="0.5" aria-label="Increase">+</button><span class="num"><input type="number" id="distN" min="5" max="70" step="0.5" aria-label="Distance in feet">ft</span></div>
       <div class="chips" id="distChips">
         <button class="chip" type="button" data-v="60.5">MLB 60′6″</button>
         <button class="chip" type="button" data-v="54">13U 54′</button>
@@ -210,31 +334,31 @@ svg text{font-family:var(--body)}
 
     <div class="ctl">
       <div class="ctl-head"><span class="n">2</span><span class="lab">Release height</span><span class="alt" id="aRel"></span></div>
-      <div class="ctl-row"><input type="range" id="rel" min="0" max="8" step="0.05"><span class="num"><input type="number" id="relN" min="0" max="8" step="0.05" aria-label="Release height in feet">ft</span></div>
+      <div class="ctl-row"><button type="button" class="step" data-for="rel" data-d="-0.0833333" aria-label="Decrease">−</button><input type="range" id="rel" min="0" max="8" step="0.05"><button type="button" class="step" data-for="rel" data-d="0.0833333" aria-label="Increase">+</button><span class="num"><input type="number" id="relN" min="0" max="8" step="0.05" aria-label="Release height in feet">ft</span></div>
       <p class="hint">Height of the ball at release, measured from field level at the plate. MLB averages about 5′9″; sidearmers sit near 4′, tall overhand pitchers near 7′.</p>
     </div>
 
     <div class="ctl">
       <div class="ctl-head"><span class="n">3</span><span class="lab">Height over the plate</span><span class="alt" id="aTgt"></span></div>
-      <div class="ctl-row"><input type="range" id="tgt" min="0" max="6" step="0.05"><span class="num"><input type="number" id="tgtN" min="0" max="6" step="0.05" aria-label="Target height in feet">ft</span></div>
+      <div class="ctl-row"><button type="button" class="step" data-for="tgt" data-d="-0.0833333" aria-label="Decrease">−</button><input type="range" id="tgt" min="0" max="6" step="0.05"><button type="button" class="step" data-for="tgt" data-d="0.0833333" aria-label="Increase">+</button><span class="num"><input type="number" id="tgtN" min="0" max="6" step="0.05" aria-label="Target height in feet">ft</span></div>
       <p class="hint">Where the ball crosses the front edge of the plate. The shaded strike zone follows the batter height setting.</p>
     </div>
 
     <div class="ctl">
       <div class="ctl-head"><span class="n">4</span><span class="lab">Pitch speed</span><span class="alt" id="aSpd"></span></div>
-      <div class="ctl-row"><input type="range" id="spd" min="10" max="105" step="0.5"><span class="num"><input type="number" id="spdN" min="10" max="105" step="0.5" aria-label="Speed in miles per hour">mph</span></div>
+      <div class="ctl-row"><button type="button" class="step" data-for="spd" data-d="-1" aria-label="Decrease">−</button><input type="range" id="spd" min="10" max="105" step="0.5"><button type="button" class="step" data-for="spd" data-d="1" aria-label="Increase">+</button><span class="num"><input type="number" id="spdN" min="10" max="105" step="0.5" aria-label="Speed in miles per hour">mph</span></div>
       <p class="hint">Speed out of the hand, as a radar gun reads it.</p>
     </div>
 
     <div class="ctl">
       <div class="ctl-head"><span class="lab">Batter height</span><span class="alt" id="aBat"></span></div>
-      <div class="ctl-row"><input type="range" id="bat" min="4" max="7" step="0.0833333"><span class="num"><input type="number" id="batN" min="4" max="7" step="0.01" aria-label="Batter height in feet">ft</span></div>
+      <div class="ctl-row"><button type="button" class="step" data-for="bat" data-d="-0.0833333" aria-label="Decrease">−</button><input type="range" id="bat" min="4" max="7" step="0.0833333"><button type="button" class="step" data-for="bat" data-d="0.0833333" aria-label="Increase">+</button><span class="num"><input type="number" id="batN" min="4" max="7" step="0.01" aria-label="Batter height in feet">ft</span></div>
       <p class="hint" id="batHint"></p>
     </div>
 
     <div class="ctl">
       <div class="ctl-head"><span class="lab">Release extension</span><span class="alt" id="aExt"></span></div>
-      <div class="ctl-row"><input type="range" id="ext" min="0" max="8" step="0.1"><span class="num"><input type="number" id="extN" min="0" max="8" step="0.1" aria-label="Extension in feet">ft</span></div>
+      <div class="ctl-row"><button type="button" class="step" data-for="ext" data-d="-0.1" aria-label="Decrease">−</button><input type="range" id="ext" min="0" max="8" step="0.1"><button type="button" class="step" data-for="ext" data-d="0.1" aria-label="Increase">+</button><span class="num"><input type="number" id="extN" min="0" max="8" step="0.1" aria-label="Extension in feet">ft</span></div>
       <p class="hint">How far in front of the rubber the ball leaves the hand. MLB pitchers average about 6.3 ft, so the ball actually travels well under 60 ft.</p>
     </div>
   </section>
@@ -401,7 +525,7 @@ svg text{font-family:var(--body)}
         let y = Y(e.h) + 4;
         const gap = y - mainY;
         if (Math.abs(gap) < 18) y = mainY + (gap >= 0 ? 18 : -18);
-        o += `<text x="${X(PLATE_FRONT)+12}" y="${y}" font-size="11.5" fill="var(--muted)" fill-opacity=".85">${e.name} of zone ${e.a.toFixed(1)}° down</text>`;
+        o += `<text x="${X(PLATE_FRONT)+12}" y="${y}" font-size="11.5" fill="var(--muted)" fill-opacity=".85">${e.name} of zone ${e.a.toFixed(1)}°</text>`;
       });
       // ball at rest at plate / animated ball
       o += `<circle id="ball" cx="${X(PLATE_FRONT)}" cy="${Y(S.tgt)}" r="6" fill="var(--chalk)" stroke="var(--pitch)" stroke-width="2"/>`;
@@ -444,7 +568,8 @@ svg text{font-family:var(--body)}
       w.textContent = sol.L <= 1
         ? "The release point is at or past the plate. Increase the distance or reduce the extension."
         : `At ${S.spd} mph the ball can't reach ${ftin(S.tgt)} over the plate from a ${ftin(S.rel)} release, even thrown at the best angle. Raise the speed or lower the target.`;
-      ["rApproach","rRelease","rTime","rDrop","rSpeed"].forEach(i=>$(i).textContent="–");
+      ["rApproach","rRelease","rTime","rDrop","rSpeed","mApproach","mTime"].forEach(i=>$(i).textContent="–");
+      $("mSpeed").textContent = S.spd + " mph";
       $("rEdges").textContent = "";
       $("rTravel").textContent = "";
       return;
@@ -460,6 +585,9 @@ svg text{font-family:var(--body)}
     $("rDrop").textContent = (sol.drop*12).toFixed(1) + " in";
     $("rSpeed").textContent = sol.vEnd.toFixed(1) + " mph";
     $("timer").textContent = `t = ${sol.t.toFixed(3)} s`;
+    $("mApproach").textContent = sol.approach.toFixed(1) + "°";
+    $("mTime").textContent = sol.t.toFixed(3) + " s";
+    $("mSpeed").textContent = (Math.round(S.spd*10)/10) + " mph";
     if (typeof updateMatch === "function") updateMatch();
   }
 
@@ -500,6 +628,19 @@ svg text{font-family:var(--body)}
     S[id] = v; el.value = v; $(id+"N").value = Math.round(v*100)/100;
     cancelAnimationFrame(anim);
     syncAlt(); render();
+    if (id === "dist" || id === "ext") fitScroll();
+  }
+
+  // On a phone the diagram is wider than the screen and scrolls sideways. Bring the release
+  // point and the plate into view when both fit; otherwise show the plate end.
+  function fitScroll(){
+    const box = $("vizScroll");
+    if (!box || box.scrollWidth <= box.clientWidth + 1) return;
+    const k = svg.getBoundingClientRect().width / 1000;
+    const sx = (1000 - 46 - 22)/91, X = s => 1000 - 22 - (s + 12)*sx;
+    const relPx = X(S.dist - S.ext)*k, rightPx = (X(PLATE_FRONT) + 150)*k;
+    const max = box.scrollWidth - box.clientWidth;
+    box.scrollLeft = (rightPx - (relPx - 60) <= box.clientWidth) ? Math.min(max, Math.max(0, relPx - 60)) : max;
   }
   ids.forEach(id => {
     $(id).value = S[id]; $(id+"N").value = Math.round(S[id]*100)/100;
@@ -620,6 +761,15 @@ svg text{font-family:var(--body)}
   function closeMatch(){
     ref = null; $("match").hidden = true;
     Object.values(MODES).forEach(v => $(v.btn).setAttribute("aria-pressed", "false"));
+    syncModeUI();
+  }
+  // Game pitch | Front toss switch, with the Both / Flight time / Angle choice shown under Front toss.
+  let lastMode = "both";
+  function syncModeUI(){
+    $("gameBtn").setAttribute("aria-pressed", ref ? "false" : "true");
+    $("tossBtn").setAttribute("aria-pressed", ref ? "true" : "false");
+    $("tossModes").hidden = !ref;
+    if (ref) lastMode = ref.mode;
   }
 
   function updateMatch(){
@@ -627,6 +777,7 @@ svg text{font-family:var(--body)}
     const c = solve(), m = ref.mode;
     const tMatch = m !== "angle", aMatch = m !== "time";
     $("matchMode").textContent = MODES[m].title;
+    syncModeUI();
     Object.entries(MODES).forEach(([k,v]) => $(v.btn).setAttribute("aria-pressed", k === m ? "true" : "false"));
 
     // options table
@@ -649,9 +800,9 @@ svg text{font-family:var(--body)}
       const sel = byDist ? (S.ext === 0 && Math.abs(S.dist - p.d) < 0.01 && Math.abs(S.rel - p.rel) < 0.01)
                          : (ref.choice != null && Math.abs(ref.choice - p.rel) < 0.001);
       const cells = o.ok
-        ? `<td>${o.L.toFixed(1)} ft</td><td>${o.spd.toFixed(1)} mph</td><td${hl(tMatch)}>${o.t.toFixed(3)} s</td><td${hl(aMatch)}>${o.approach.toFixed(1)}°</td>`
+        ? `<td data-l="Travel">${o.L.toFixed(1)} ft</td><td data-l="Speed">${o.spd.toFixed(1)} mph</td><td data-l="Flight"${hl(tMatch)}>${o.t.toFixed(3)} s</td><td data-l="Angle"${hl(aMatch)}>${o.approach.toFixed(1)}°</td>`
         : `<td colspan="4" class="na">${o.why}</td>`;
-      return `<tr class="${sel?'sel':''}"><td>${p.name}</td><td>${ftin(p.rel)}</td>${cells}<td><button type="button" class="use" data-i="${i}" ${o.ok?'':'disabled'}>${sel?'Selected':'Use'}</button></td></tr>`;
+      return `<tr class="${sel?'sel':''}"><td>${p.name}</td><td>${ftin(p.rel)}</td>${cells}<td class="act"><button type="button" class="use" data-i="${i}" ${o.ok?'':'disabled'}>${sel?'Selected':'Use'}</button></td></tr>`;
     }).join("");
     $("optBody").querySelectorAll("button.use").forEach(btn => btn.addEventListener("click", () => {
       const r = rowsSrc[+btn.dataset.i];
@@ -709,11 +860,27 @@ svg text{font-family:var(--body)}
   $("matchBtn").addEventListener("click", () => startMatch("both"));
   $("matchTimeBtn").addEventListener("click", () => startMatch("time"));
   $("matchAngleBtn").addEventListener("click", () => startMatch("angle"));
-  $("backBtn").addEventListener("click", () => {
+  $("gameBtn").addEventListener("click", () => {
     if (!ref) return;
     const g = ref.S; closeMatch();
     Object.keys(g).forEach(k => setVal(k, g[k]));
   });
+  $("tossBtn").addEventListener("click", () => { if (!ref) startMatch(lastMode); });
+
+  // − / + buttons beside each slider; hold to repeat.
+  document.querySelectorAll("button.step").forEach(b => {
+    const id = b.dataset.for, d = +b.dataset.d;
+    let timer = null, delay = null;
+    const bump = () => setVal(id, Math.round((S[id] + d)*1000)/1000);
+    const stop = () => { clearTimeout(delay); clearInterval(timer); delay = timer = null; };
+    b.addEventListener("pointerdown", e => { e.preventDefault(); bump(); delay = setTimeout(() => { timer = setInterval(bump, 70); }, 400); });
+    ["pointerup","pointerleave","pointercancel"].forEach(ev => b.addEventListener(ev, stop));
+    b.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); bump(); } });
+  });
+
+  // Display options start open on wide screens and folded away on phones.
+  if (window.matchMedia("(min-width: 701px) and (min-height: 501px)").matches) $("displayOpts").open = true;
+  window.addEventListener("resize", () => fitScroll());
 
   const PRESETS = {
     mlb: { dist:60.5, spd:90, rel:5.75, tgt:2.5, ext:6.3, bat:73/12 },
@@ -725,7 +892,7 @@ svg text{font-family:var(--body)}
     Object.keys(p).forEach(k => setVal(k, p[k]));
   }));
 
-  syncAlt(); render();
+  syncAlt(); render(); syncModeUI(); fitScroll();
 })();
 </script>
 
