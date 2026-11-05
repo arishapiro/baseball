@@ -61,7 +61,7 @@ body{margin:0;background:#fff}
 .ls-head{padding:16px max(16px,env(safe-area-inset-left,0px)) 6px}
 .ls-head h1{margin:0 0 2px;font-size:clamp(22px,4vw,30px)}
 .ls-head .author{margin:0 !important}
-.ls-tabs{position:sticky;top:var(--sticky-top,env(safe-area-inset-top,0px));z-index:50;display:grid;grid-template-columns:repeat(3,1fr);
+.ls-tabs{position:sticky;top:var(--sticky-top,env(safe-area-inset-top,0px));z-index:50;display:grid;grid-template-columns:repeat(4,1fr);
   gap:6px;padding:8px max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));background:#fff;border-bottom:1px solid var(--ls-line)}
 .ls-tabs button{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 8px;min-height:44px;font-size:15px;font-weight:650;
   border:1px solid var(--ls-line);border-radius:10px;background:var(--ls-bg);color:var(--ls-ink);white-space:nowrap}
@@ -90,12 +90,18 @@ details.locks-box{margin-top:18px;padding-top:14px;border-top:1px solid var(--ls
 details.locks-box[open] > summary{margin-bottom:8px}
 #licenseCard{margin:16px max(16px,env(safe-area-inset-left,0px)) 24px !important}
 @media (max-width:640px){
-  .ls-tabs button{font-size:14px;padding:9px 4px;gap:5px}
+  .ls-tabs{gap:4px;padding-left:8px;padding-right:8px}
+  .ls-tabs button{font-size:13px;padding:8px 2px;gap:5px;white-space:normal;line-height:1.1;text-align:center}
   .ls-n{display:none}
   .card{padding:12px;margin:12px 0}
   .row > div{flex:1 1 140px}
   .row input[type=number], .row select{width:100%}
   #run{width:100%}
+  .gameviz{grid-template-columns:minmax(0,1fr) !important;gap:14px}
+  .gameviz > *{min-width:0}
+  .scoreboard{gap:6px}.scorebox{padding:6px}
+  #vizBatterStats{grid-template-columns:repeat(4,minmax(0,1fr)) !important}
+  #watchGame{flex:1 1 100%}
 }
 </style>
 </head>
@@ -110,7 +116,8 @@ details.locks-box[open] > summary{margin-bottom:8px}
 <nav class="ls-tabs" role="tablist" aria-label="Sections">
   <button type="button" role="tab" id="tabBtn-batters" aria-controls="tab-batters" data-tab="batters"><span class="ls-n">1</span>Batters</button>
   <button type="button" role="tab" id="tabBtn-order" aria-controls="tab-order" data-tab="order"><span class="ls-n">2</span>Batting order</button>
-  <button type="button" role="tab" id="tabBtn-settings" aria-controls="tab-settings" data-tab="settings"><span class="ls-n">3</span>Settings</button>
+  <button type="button" role="tab" id="tabBtn-watch" aria-controls="tab-watch" data-tab="watch"><span class="ls-n">3</span>Watch game</button>
+  <button type="button" role="tab" id="tabBtn-settings" aria-controls="tab-settings" data-tab="settings"><span class="ls-n">4</span>Settings</button>
 </nav>
 
 <section class="ls-panel" id="tab-batters" role="tabpanel" aria-labelledby="tabBtn-batters">
@@ -161,6 +168,12 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
 <p class="muted">Each player has a separate bar chart. The x-axis is batting position and the bar height is how many of the top 30 optimized lineups place that player in that position.</p>
 <div id="positionDistribution"></div>
 </div>
+<h2 class="ls-sub">More analysis</h2>
+<div class="card" id="leverageCard" style="display:none"><h2>Lineup leverage / forced-slot analysis</h2><p class="muted">Choose a player and the app will force him into each batting slot, then re-optimize the rest of the lineup around him. This helps explain why a strong hitter or basestealer may be worth more in one spot than another.</p><div class="row"><div><label>Player</label><select id="leveragePlayer"></select></div><div><label>Simulations per lineup</label><input id="levSims" type="number" min="50" max="5000" value="500"></div><div><label>GA budget per slot</label><input id="levBudget" type="number" min="50" max="20000" value="1200"></div><button id="leverageBtn" class="primary">Run leverage analysis</button><button id="stopLeverage">Stop</button></div><div class="bar"><div id="levProg"></div></div><div id="leverageStatus"></div><div id="leverageResults" class="wrap"></div></div>
+<div class="card" id="explainCard" style="display:none"><h2>Bottom-order value + pairwise synergy</h2><p class="muted">These diagnostics help explain counterintuitive lineups where a stronger hitter is placed lower. Turnover value tests whether a player creates value as a second leadoff hitter in spots 7–9. Pairwise synergy estimates which hitter-before-hitter combinations create more runs than typical random adjacency.</p><h3>Turnover / bottom-order value</h3><div class="row"><div><label>Simulations per lineup</label><input id="turnSims" type="number" min="50" max="3000" value="350"></div><div><label>GA budget per forced slot</label><input id="turnBudget" type="number" min="50" max="10000" value="650"></div><button id="turnoverBtn" class="primary">Run turnover value</button><button id="stopTurnover">Stop</button></div><div class="bar"><div id="turnProg"></div></div><div id="turnoverStatus"></div><div id="turnoverResults" class="wrap"></div><h3>Pairwise synergy matrix</h3><div class="row"><div><label>Random adjacent lineups per pair</label><input id="pairSamples" type="number" min="5" max="500" value="60"></div><div><label>Simulations per lineup</label><input id="pairSims" type="number" min="25" max="2000" value="150"></div><button id="pairwiseBtn" class="primary">Run pairwise synergy</button><button id="stopPairwise">Stop</button></div><p class="muted tiny">The matrix value is runs/game above or below a randomized baseline when the row player bats immediately before the column player. Positive values suggest a useful sequence; negative values suggest that adjacency is less helpful.</p><div class="bar"><div id="pairProg"></div></div><div id="pairwiseStatus"></div><div id="pairwiseResults" class="wrap"></div></div>
+</section>
+
+<section class="ls-panel" id="tab-watch" role="tabpanel" aria-labelledby="tabBtn-watch" hidden>
 <div class="card" id="gameVizCard" style="display:none">
 <h2>Watch one simulated game</h2>
 <p class="muted">This animates one game using the same hitter event probabilities, stolen-base budgets, runner-advancement rules, and inning setting as the optimizer. The simulator models only your offense, so the opponent score is shown as 0.</p>
@@ -220,9 +233,6 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
   </div>
 </div>
 </div>
-<h2 class="ls-sub">More analysis</h2>
-<div class="card" id="leverageCard" style="display:none"><h2>Lineup leverage / forced-slot analysis</h2><p class="muted">Choose a player and the app will force him into each batting slot, then re-optimize the rest of the lineup around him. This helps explain why a strong hitter or basestealer may be worth more in one spot than another.</p><div class="row"><div><label>Player</label><select id="leveragePlayer"></select></div><div><label>Simulations per lineup</label><input id="levSims" type="number" min="50" max="5000" value="500"></div><div><label>GA budget per slot</label><input id="levBudget" type="number" min="50" max="20000" value="1200"></div><button id="leverageBtn" class="primary">Run leverage analysis</button><button id="stopLeverage">Stop</button></div><div class="bar"><div id="levProg"></div></div><div id="leverageStatus"></div><div id="leverageResults" class="wrap"></div></div>
-<div class="card" id="explainCard" style="display:none"><h2>Bottom-order value + pairwise synergy</h2><p class="muted">These diagnostics help explain counterintuitive lineups where a stronger hitter is placed lower. Turnover value tests whether a player creates value as a second leadoff hitter in spots 7–9. Pairwise synergy estimates which hitter-before-hitter combinations create more runs than typical random adjacency.</p><h3>Turnover / bottom-order value</h3><div class="row"><div><label>Simulations per lineup</label><input id="turnSims" type="number" min="50" max="3000" value="350"></div><div><label>GA budget per forced slot</label><input id="turnBudget" type="number" min="50" max="10000" value="650"></div><button id="turnoverBtn" class="primary">Run turnover value</button><button id="stopTurnover">Stop</button></div><div class="bar"><div id="turnProg"></div></div><div id="turnoverStatus"></div><div id="turnoverResults" class="wrap"></div><h3>Pairwise synergy matrix</h3><div class="row"><div><label>Random adjacent lineups per pair</label><input id="pairSamples" type="number" min="5" max="500" value="60"></div><div><label>Simulations per lineup</label><input id="pairSims" type="number" min="25" max="2000" value="150"></div><button id="pairwiseBtn" class="primary">Run pairwise synergy</button><button id="stopPairwise">Stop</button></div><p class="muted tiny">The matrix value is runs/game above or below a randomized baseline when the row player bats immediately before the column player. Positive values suggest a useful sequence; negative values suggest that adjacency is less helpful.</p><div class="bar"><div id="pairProg"></div></div><div id="pairwiseStatus"></div><div id="pairwiseResults" class="wrap"></div></div>
 </section>
 
 <section class="ls-panel" id="tab-settings" role="tabpanel" aria-labelledby="tabBtn-settings" hidden>
@@ -1538,11 +1548,11 @@ function getVizLineup(){
 function renderVizLineup(order,currentIndex=-1){
   const box=document.getElementById('vizLineupList');
   const fmt=v=>{const n=Number(v);return Number.isFinite(n)?n.toFixed(3).replace(/^0/,''):'—';};
-  box.innerHTML=`<div style="display:grid;grid-template-columns:26px minmax(150px,1fr) 52px 52px 52px 36px;gap:7px;padding:0 7px 4px;font-size:11px;color:#666"><span></span><span>Player</span><span>AVG</span><span>OBP</span><span>OPS</span><span>SB</span></div>`+
+  box.innerHTML=`<div style="display:grid;grid-template-columns:26px minmax(0,1fr) 44px 44px 44px 30px;gap:7px;padding:0 7px 4px;font-size:11px;color:#666"><span></span><span>Player</span><span>AVG</span><span>OBP</span><span>OPS</span><span>SB</span></div>`+
     order.map((p,i)=>{
       const current=i===currentIndex;
       const avg=fmt(p?.AVG), obp=fmt(p?.OBP ?? rate(p)), op=fmt(p?.OPS ?? ops(p)), sb=p?.SB ?? 0;
-      return `<div class="lineupRow ${current?'current':''}" style="display:grid;grid-template-columns:26px minmax(150px,1fr) 52px 52px 52px 36px;gap:7px;align-items:center;font-weight:400;min-height:28px;box-sizing:border-box"><div class="lineupNum">${i+1}.</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(p?.name||'Unknown')}">${esc(p?.name||'Unknown')}</div><div>${avg}</div><div>${obp}</div><div>${op}</div><div>${sb}</div></div>`;
+      return `<div class="lineupRow ${current?'current':''}" style="display:grid;grid-template-columns:26px minmax(0,1fr) 44px 44px 44px 30px;gap:7px;align-items:center;font-weight:400;min-height:28px;box-sizing:border-box"><div class="lineupNum">${i+1}.</div><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(p?.name||'Unknown')}">${esc(p?.name||'Unknown')}</div><div>${avg}</div><div>${obp}</div><div>${op}</div><div>${sb}</div></div>`;
     }).join('');
 }
 function setVizOutcome(code,desc){document.getElementById('vizOutcomeCode').textContent=code||'—';document.getElementById('vizOutcomeDesc').textContent=desc||'';}
@@ -1750,7 +1760,7 @@ setTimeout(()=>{try{updateVizLineupOptions();}catch(e){}},0);
   });
   let start='batters';
   const h=(location.hash||'').slice(1);
-  if(['batters','order','settings'].includes(h)) start=h;
+  if(['batters','order','watch','settings'].includes(h)) start=h;
   else { try{ const v=localStorage.getItem('lsTab'); if(v && document.getElementById('tab-'+v)) start=v; }catch(_){} }
   show(start);
   window.lsShowTab=show;
