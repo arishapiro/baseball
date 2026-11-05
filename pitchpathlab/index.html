@@ -54,7 +54,6 @@ svg#field{display:block;width:100%;height:auto}
 .viz-strip .mini{display:none}
 .panel{display:contents}
 .drawer{display:contents}
-.drawer-head, .ctl-toggle{display:none}
 .wrap > header{order:0}
 .stage-bar{order:1}
 .viz{order:2}
@@ -242,32 +241,46 @@ svg text{font-family:var(--body)}
   .match-table button.use{padding:9px 14px;font-size:13px}
 }
 
-/* Phone turned sideways: the drawing fills the screen. Controls slide in from the right. */
+/* Phone turned sideways: same controls above and below, with the drawing across the full width.
+   Top row: pitch type (and the front toss Match choice), display button, then Throw and the live numbers.
+   Middle: the drawing. Bottom: the setting tiles in one row and the chosen slider; the strip scrolls for more. */
 @media (orientation:landscape) and (max-height:500px){
-  .wrap{display:block;padding-block:6px}
-  .viz{height:100%;display:flex;flex-direction:column}
-  .viz-scroll{flex:1 1 auto;min-height:0;overflow:hidden}
+  .wrap{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;gap:6px 8px;padding-block:6px}
+  .viz{display:contents}
+  .stage-bar{grid-column:1;grid-row:1;padding:5px;display:flex;flex-wrap:nowrap;gap:6px;align-items:center}
+  .bar-group{display:contents}
+  .stage-bar .seg.sub{grid-column:auto;grid-row:auto}
+  .stage-bar:has(#tossModes:not([hidden])) .presets{display:none}
+  .seg{flex:none}
+  .seg-lab{display:none}
+  .seg button{padding:5px 9px;font-size:13px;min-height:34px}
+  .presets .chip, details.display summary{min-height:34px;height:34px;padding-top:0;padding-bottom:0}
+  details.display summary{width:36px}
+  .viz-strip{grid-column:2;grid-row:1;align-self:stretch;background:var(--surface);border:1px solid var(--line);border-radius:6px;
+    padding:4px 10px;gap:6px 14px;overflow:hidden}
+  #play{padding:6px 12px;font-size:14px}
+  .mini .mk{font-size:9px}
+  .mini b{font-size:16px}
+  .viz-scroll{grid-column:1 / -1;grid-row:2;min-height:0;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:6px}
   svg#field{width:100%;height:100%}
-  .viz-strip{flex:none}
-  .ctl-toggle{display:inline-flex;align-items:center;margin-left:auto;padding:9px 14px;font-size:14px;min-height:40px}
-  .ctl-toggle[aria-expanded="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-  .drawer{display:flex;flex-direction:column;gap:8px;position:fixed;z-index:30;right:0;bottom:0;
-    top:var(--sticky-top, env(safe-area-inset-top,0px));width:min(380px,52vw);
-    padding:8px max(8px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) 8px;
-    background:var(--bg);border-left:1px solid var(--line);box-shadow:-12px 0 30px -18px rgba(0,0,0,.55);
-    transform:translateX(105%);visibility:hidden;transition:transform .2s ease, visibility 0s linear .2s}
-  .drawer.open{transform:none;visibility:visible;transition:transform .2s ease}
-  .drawer-head{display:flex;align-items:center;justify-content:space-between;flex:none;padding:0 2px}
-  .drawer-head span{font:700 15px/1 var(--display);letter-spacing:.06em;text-transform:uppercase}
-  .drawer-close{padding:8px 14px;min-height:36px}
-  .drawer .stage-bar{flex:none}
-  .drawer .panel{flex:1 1 auto;min-height:0}
-  .seg button{padding:7px 8px;font-size:13px;min-height:36px}
-  .presets .chip, details.display summary{min-height:36px;height:36px}
-  .param-tabs .pl{font-size:9.5px;letter-spacing:.04em}
-  .param-tabs .pv{font-size:14px}
+  .panel{grid-column:1 / -1;grid-row:3;max-height:104px;gap:6px;padding-bottom:4px}
+  .panel > .controls{order:1}
+  .panel > .match{order:2}
+  .param-tabs{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+  .param-tabs button{min-height:38px;padding:3px 7px}
+  .param-tabs .pl{font-size:9px;letter-spacing:.04em}
+  .param-tabs .pv{font-size:13px}
+  .ctl{padding:4px 8px;gap:4px}
+  .ctl-head{display:none}
+  .ctl .hint{display:none}
+  button.step{width:34px;height:34px;font-size:18px}
+  input[type=range]{height:34px}
+  .num input{padding:4px}
 }
-@media (prefers-reduced-motion: reduce){ .drawer{transition:none !important} }
+@media (orientation:landscape) and (max-height:500px) and (max-width:760px){
+  .mini-speed{display:none !important}
+  .seg button{padding:5px 7px;font-size:12.5px}
+}
 </style>
 <style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font-size:14px}[hidden]{display:none!important}</style>
 </head>
@@ -292,13 +305,11 @@ svg text{font-family:var(--body)}
       <span class="timer" id="timer">t = 0.000 s</span>
       <span class="mini"><span class="mk">Approach</span><b id="mApproach">–</b></span>
       <span class="mini"><span class="mk">Flight</span><b id="mTime">–</b></span>
-      <span class="mini"><span class="mk">Speed</span><b id="mSpeed">–</b></span>
-      <button type="button" class="ctl-toggle" id="ctlToggle" aria-controls="drawer" aria-expanded="false">Controls</button>
+      <span class="mini mini-speed"><span class="mk">Speed</span><b id="mSpeed">–</b></span>
     </div>
   </section>
 
   <div class="drawer" id="drawer">
-    <div class="drawer-head"><span>Controls</span><button type="button" class="drawer-close" id="drawerClose">Done</button></div>
   <section class="stage-bar" aria-label="Pitch type and display">
     <div class="bar-group">
       <div class="seg" role="group" aria-label="Pitch type">
@@ -491,11 +502,12 @@ svg text{font-family:var(--body)}
     const W = narrow ? Math.round(cw/0.75) : 1000, padL = narrow ? 34 : 46, padR = narrow ? 52 : 22;
     const sx = (W - padL - padR)/(sMax - sMin);
     const top = 8;                                  // fixed height axis: 0 to 8 ft
-    const topPad = 26, botPad = 54;
+    // Sideways phones give the drawing a short, wide box, so the margins above and below shrink.
+    const full = window.matchMedia("(orientation: landscape) and (max-height: 500px)").matches;
+    const topPad = full ? 22 : 26, botPad = full ? 40 : 54;
     let ex = $("exag").value === "fit" ? null : +$("exag").value;
     if (ex === null){
       // "Fit screen": stretch heights so the 0-8 ft axis fills the space set aside for the diagram.
-      const full = window.matchMedia("(orientation: landscape) and (max-height: 500px)").matches;
       const boxH = $("vizScroll") ? $("vizScroll").clientHeight : 0;
       const px = full && boxH > 80 ? boxH : narrow ? Math.min(window.innerHeight*0.36, 320) : 360;
       const units = px * (W / Math.max(cw, 1));
@@ -541,13 +553,13 @@ svg text{font-family:var(--body)}
     o += `<rect x="${X(PLATE_FRONT)}" y="${Y(zT)}" width="${PLATE_FRONT*sx}" height="${(zT-zB)*sy}" fill="var(--zone)" stroke="var(--zone-edge)" stroke-dasharray="3 3"/>`;
 
     // distance ruler
-    const rY = Y0 + 20;
+    const rY = Y0 + (full ? 16 : 20);
     for (let s=0; s<=sMax-4; s+=10){
       o += `<line x1="${X(s)}" x2="${X(s)}" y1="${Y0}" y2="${Y0+6}" stroke="var(--muted)"/>`;
       o += `<text x="${X(s)}" y="${rY}" text-anchor="middle" font-size="11" fill="var(--muted)">${narrow && s ? s : s + " ft"}</text>`;
     }
     // travel bracket
-    const bY = Y0 + 38;
+    const bY = Y0 + (full ? 32 : 38);
     o += `<line x1="${X(rel)}" x2="${X(PLATE_FRONT)}" y1="${bY}" y2="${bY}" stroke="var(--ink)" stroke-width="1"/>`;
     o += `<line x1="${X(rel)}" x2="${X(rel)}" y1="${bY-4}" y2="${bY+4}" stroke="var(--ink)"/><line x1="${X(PLATE_FRONT)}" x2="${X(PLATE_FRONT)}" y1="${bY-4}" y2="${bY+4}" stroke="var(--ink)"/>`;
     o += `<rect x="${(X(rel)+X(PLATE_FRONT))/2-62}" y="${bY-9}" width="124" height="17" fill="var(--turf)"/>`;
@@ -964,14 +976,6 @@ svg text{font-family:var(--body)}
   });
   $("tossBtn").addEventListener("click", () => { if (!ref) startMatch(lastMode); });
 
-  // Sideways phones: the controls live in a drawer that slides over the drawing.
-  function setDrawer(open){
-    $("drawer").classList.toggle("open", open);
-    $("ctlToggle").setAttribute("aria-expanded", open ? "true" : "false");
-  }
-  $("ctlToggle").addEventListener("click", () => setDrawer(!$("drawer").classList.contains("open")));
-  $("drawerClose").addEventListener("click", () => setDrawer(false));
-  $("vizScroll").addEventListener("click", () => setDrawer(false));
 
   // − / + buttons beside each slider; hold to repeat.
   document.querySelectorAll("button.step").forEach(b => {
