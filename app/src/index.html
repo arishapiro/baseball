@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dugout Coach</title>
+<link rel="stylesheet" href="app.css">
+<style>
+/* Home screen: one column of two big tool cards on a dark dugout band */
+.home{min-height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:22px;
+  padding-top:calc(28px + env(safe-area-inset-top,0px));padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));
+  max-width:560px;margin:0 auto}
+.brand h1{font-family:var(--dc-display);font-size:40px;line-height:1;margin:0;text-transform:uppercase;letter-spacing:.02em;font-weight:700}
+.brand p{margin:8px 0 0;color:var(--dc-muted);font-size:16px}
+.tools{display:grid;gap:14px;align-content:start}
+.tool{display:grid;grid-template-columns:56px 1fr auto;gap:14px;align-items:center;text-decoration:none;color:var(--dc-fg);
+  background:var(--dc-surface);border:1px solid var(--dc-line);border-radius:10px;padding:16px 14px;min-height:96px;
+  -webkit-tap-highlight-color:transparent;transition:transform .08s ease}
+.tool:active{transform:scale(.985)}
+.tool:focus-visible{outline:2px solid var(--dc-accent);outline-offset:2px}
+.tool svg{width:56px;height:56px;display:block}
+.tool h2{margin:0;font-family:var(--dc-display);font-size:23px;text-transform:uppercase;letter-spacing:.02em;font-weight:700;line-height:1.05}
+.tool p{margin:4px 0 0;color:var(--dc-muted);font-size:14px;line-height:1.35}
+.tool .go{font-size:26px;color:var(--dc-accent);line-height:1}
+.credit{font-size:13px;color:var(--dc-muted);text-align:center;display:grid;gap:2px}
+.credit span{user-select:all;-webkit-user-select:all}
+</style>
+</head>
+<body class="dc-home-page">
+<main class="home">
+  <div class="brand">
+    <h1>Dugout Coach</h1>
+    <p>Tools for Little League coaches</p>
+  </div>
+
+  <nav class="tools" aria-label="Tools">
+    <a class="tool" href="pitch.html">
+      <svg viewBox="0 0 56 56" aria-hidden="true">
+        <rect x="0" y="0" width="56" height="56" rx="10" fill="var(--dc-turf)"/>
+        <path d="M6 44 Q 12 40 18 40 L 22 40" fill="none" stroke="var(--dc-clay)" stroke-width="5" stroke-linecap="round"/>
+        <path d="M9 22 Q 28 14 46 30" fill="none" stroke="var(--dc-accent)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="9" cy="22" r="3" fill="var(--dc-fg)"/>
+        <circle cx="46" cy="30" r="5" fill="#fff" stroke="var(--dc-accent)" stroke-width="2"/>
+        <rect x="42" y="44" width="10" height="3" fill="#fff"/>
+      </svg>
+      <div>
+        <h2>Pitch Path Lab</h2>
+        <p>A pitch's path and approach angle, and how to match it with front toss.</p>
+      </div>
+      <span class="go" aria-hidden="true">›</span>
+    </a>
+
+    <a class="tool" href="lineup.html">
+      <svg viewBox="0 0 56 56" aria-hidden="true">
+        <rect x="0" y="0" width="56" height="56" rx="10" fill="var(--dc-turf)"/>
+        <g font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="var(--dc-fg)">
+          <text x="9" y="17">1</text><text x="9" y="30">2</text><text x="9" y="43">3</text>
+        </g>
+        <rect x="18" y="10" width="28" height="8" rx="2" fill="var(--dc-accent)"/>
+        <rect x="18" y="23" width="22" height="8" rx="2" fill="var(--dc-clay)"/>
+        <rect x="18" y="36" width="25" height="8" rx="2" fill="var(--dc-clay)" opacity=".7"/>
+      </svg>
+      <div>
+        <h2>Batting Lineup</h2>
+        <p>Find the batting order that scores the most runs from your team's stats.</p>
+      </div>
+      <span class="go" aria-hidden="true">›</span>
+    </a>
+  </nav>
+
+  <footer class="credit">
+    <div>By Ari Shapiro, PhD</div>
+    <span>ariyshapiro@gmail.com</span>
+  </footer>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

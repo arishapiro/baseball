@@ -1,0 +1,41 @@
+/* Shared app styles: the home screen and the top bar added to each tool page.
+   Every class is prefixed dc- so it can't collide with the tools' own CSS. */
+:root{
+  --dc-bg:#F2F4F0; --dc-surface:#FFFFFF; --dc-fg:#17212A; --dc-muted:#5A676C; --dc-line:#D2D9D3;
+  --dc-turf:#E1E9DE; --dc-clay:#C18457; --dc-accent:#C42B2B;
+  --dc-bar:#17212A; --dc-bar-fg:#F2F4F0;
+  --dc-display:"Saira Condensed","Arial Narrow","Roboto Condensed","Helvetica Neue",Arial,sans-serif;
+  --dc-bar-h:48px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --dc-bg:#10161A; --dc-surface:#172026; --dc-fg:#E6ECE9; --dc-muted:#93A2A5; --dc-line:#2A363C;
+    --dc-turf:#18241F; --dc-clay:#9C6440; --dc-accent:#FF6A5C;
+    --dc-bar:#0B1013; --dc-bar-fg:#E6ECE9;
+  }
+}
+body.dc-home-page{margin:0;min-height:100vh;background:var(--dc-bg);color:var(--dc-fg);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+
+/* Top bar on tool pages */
+.dc-bar{position:fixed;inset:0 0 auto;z-index:1000;display:flex;align-items:center;gap:12px;
+  height:calc(var(--dc-bar-h) + env(safe-area-inset-top,0px));
+  padding:env(safe-area-inset-top,0px) max(12px,env(safe-area-inset-right,0px)) 0 max(8px,env(safe-area-inset-left,0px));
+  background:var(--dc-bar);color:var(--dc-bar-fg);box-sizing:border-box;
+  font:600 16px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.dc-home{color:inherit;text-decoration:none;padding:12px 10px;margin:-12px 0;border-radius:6px;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent}
+.dc-home:active{background:rgba(255,255,255,.12)}
+.dc-home:focus-visible{outline:2px solid var(--dc-accent)}
+.dc-title{font-family:var(--dc-display);font-size:19px;text-transform:uppercase;letter-spacing:.03em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body[data-dc-tool]{padding-top:calc(var(--dc-bar-h) + env(safe-area-inset-top,0px)) !important;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);
+  box-sizing:border-box}
+
+/* Pitch Path Lab on a phone: keep the diagram readable and let it scroll sideways inside its card. */
+@media (max-width: 700px){
+  .dc-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .dc-scroll svg#field{min-width:760px}
+}

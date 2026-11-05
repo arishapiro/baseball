@@ -1,0 +1,12 @@
+{
+  "appId": "com.arishapiro.dugoutcoach",
+  "appName": "Dugout Coach",
+  "webDir": "www",
+  "backgroundColor": "#17212A",
+  "android": {
+    "adjustMarginsForEdgeToEdge": "auto"
+  },
+  "ios": {
+    "contentInset": "never"
+  }
+}
