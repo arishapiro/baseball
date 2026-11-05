@@ -84,9 +84,16 @@ details.card > summary, details.locks-box > summary{cursor:pointer;padding:2px 0
 #players input[data-k="name"]{width:9.5em}
 #players input[data-k="Pos"]{width:3em;text-align:center}
 #players td:first-child,#players th:first-child{position:sticky;left:0;z-index:2;background:#fff;text-align:right;color:#666}
-#players td:nth-child(2),#players th:nth-child(2){position:sticky;left:1.9em;z-index:2;background:#fff;box-shadow:4px 0 6px -4px #0003}
+#players td:nth-child(2),#players th:nth-child(2){position:sticky;left:38px;z-index:2;background:#fff;box-shadow:4px 0 6px -4px #0003}
 #players th:first-child,#players th:nth-child(2){z-index:3;background:#fafafa}
-#players td:first-child,#players th:first-child{min-width:1.6em}
+#players td:first-child,#players th:first-child{width:38px;min-width:38px;max-width:38px;box-sizing:border-box;text-align:center}
+#players input.plays{width:22px;height:22px;padding:0;margin:0;accent-color:var(--ls-accent);vertical-align:middle}
+#players tr.absent td:not(:first-child){opacity:.4}
+#players tr.absent input[data-k="name"]{text-decoration:line-through}
+.run-opt{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 12px}
+.run-opt label{margin:0;font-weight:650}
+.run-opt input{width:5.2em;text-align:right;padding:7px;box-sizing:border-box}
+.run-opt .tiny{flex-basis:100%}
 
 /* ---- Watch game: controls, field, batter and result stay together at the top ---- */
 .vz-intro{margin:0 0 10px}
@@ -201,7 +208,7 @@ details.locks-box[open] > summary{margin-bottom:8px}
 <p class="muted">This app has your Red Sox stats embedded. Each plate appearance is modeled as one weighted draw from actual event counts, including HR explicitly. You can also load a new CSV.</p>
 <div id="loadMsg"></div>
 </div>
-<div class="card" id="playersCard" style="display:none"><h2>Eligible players</h2><div id="eligibilityNote"></div><div id="players" class="wrap"></div><div id="excluded"></div></div>
+<div class="card" id="playersCard" style="display:none"><h2>Players</h2><div id="eligibilityNote"></div><div id="players" class="wrap"></div><div id="excluded"></div></div>
 <details class="card" id="inputInstructions">
 <summary><b>How to format your stats file</b></summary>
 <p>Upload either a <b>GameChanger stats export CSV</b> or a simple batting-stat CSV using the format below. For a full GameChanger export, the simulator automatically reads the Batting section and ignores Pitching and Fielding statistics.</p>
@@ -218,6 +225,7 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
 <div class="run-block">
   <h2 style="margin:0 0 6px">Find the best batting order</h2>
   <p style="margin:0 0 14px" class="muted">Simulates thousands of games for many batting orders using the batters on the <b>Set Players</b> tab and the assumptions on the <b>Settings</b> tab, and keeps the order that scores the most runs.</p>
+  <div class="run-opt"><label for="sims">Simulations per lineup</label><input id="sims" type="number" min="50" max="20000" value="1000" inputmode="numeric"><span class="muted tiny">More gives steadier results but takes longer.</span></div>
   <button id="run" class="primary" style="font-size:18px;padding:12px 24px;font-weight:700">▶ Run Optimizer</button>
   <button id="stop" style="margin-left:8px">Stop</button>
 </div>
@@ -328,7 +336,6 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
 <div><label>% games to full innings (0–1)</label><input id="fullInningPct" type="number" min="0" max="1" step="0.01" value="1"></div>
 <div><label>Batting side</label><select id="homeAway"><option value="away">Away</option><option value="home">Home</option></select></div>
 <div><label>Win % (0–1)</label><input id="winPct" type="number" min="0" max="1" step="0.01" value="0.5"></div>
-<div><label>Simulations per lineup</label><input id="sims" type="number" min="50" max="20000" value="1000"></div>
 <div><label>Random baseline orders</label><input id="randomBaselineOrders" type="number" min="5" max="1000" value="50"></div>
 <div><label>Lineup evaluations / GA budget</label><input id="cands" type="number" min="50" max="100000" value="5000"></div>
 <div><label>Wild pitch / passed ball: once every N batters</label><input id="wpEvery" type="number" min="1" max="999" value="20"></div>
@@ -385,7 +392,7 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
 const EMBEDDED = [{"GP": 16.0, "PA": 46.0, "AB": 39.0, "AVG": 0.308, "OBP": 0.413, "OPS": 0.875, "SLG": 0.462, "H": 12.0, "1B": 7.0, "2B": 4.0, "3B": 1.0, "HR": 0.0, "RBI": 6.0, "R": 7.0, "BB": 6.0, "SO": 13.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 5.0, "CS": 0.0, "SB%": 100.0, "name": "Basher, mediocre runner"}, {"GP": 15.0, "PA": 42.0, "AB": 32.0, "AVG": 0.25, "OBP": 0.429, "OPS": 0.804, "SLG": 0.375, "H": 8.0, "1B": 4.0, "2B": 4.0, "3B": 0.0, "HR": 0.0, "RBI": 5.0, "R": 6.0, "BB": 9.0, "SO": 17.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 7.0, "CS": 1.0, "SB%": 87.5, "name": "Basher, fast runner"}, {"GP": 16.0, "PA": 50.0, "AB": 32.0, "AVG": 0.469, "OBP": 0.66, "OPS": 1.16, "SLG": 0.5, "H": 15.0, "1B": 14.0, "2B": 1.0, "3B": 0.0, "HR": 0.0, "RBI": 7.0, "R": 19.0, "BB": 12.0, "SO": 6.0, "HBP": 6.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 37.0, "CS": 2.0, "SB%": 94.87, "name": "OBP leader"}, {"GP": 12.0, "PA": 37.0, "AB": 33.0, "AVG": 0.576, "OBP": 0.622, "OPS": 1.258, "SLG": 0.636, "H": 19.0, "1B": 17.0, "2B": 2.0, "3B": 0.0, "HR": 0.0, "RBI": 13.0, "R": 8.0, "BB": 4.0, "SO": 1.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 10.0, "CS": 2.0, "SB%": 83.33, "name": "Contact hitter, never strikes out"}, {"GP": 17.0, "PA": 41.0, "AB": 28.0, "AVG": 0.143, "OBP": 0.415, "OPS": 0.557, "SLG": 0.143, "H": 4.0, "1B": 4.0, "2B": 0.0, "3B": 0.0, "HR": 0.0, "RBI": 4.0, "R": 4.0, "BB": 11.0, "SO": 14.0, "HBP": 2.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 1.0, "CS": 0.0, "SB%": 100.0, "name": "Walks or strikes out"}, {"GP": 15.0, "PA": 33.0, "AB": 26.0, "AVG": 0.115, "OBP": 0.303, "OPS": 0.418, "SLG": 0.115, "H": 3.0, "1B": 3.0, "2B": 0.0, "3B": 0.0, "HR": 0.0, "RBI": 3.0, "R": 4.0, "BB": 6.0, "SO": 18.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 1.0, "CS": 2.0, "SB%": 33.33, "name": "Worst batter"}, {"GP": 17.0, "PA": 45.0, "AB": 37.0, "AVG": 0.27, "OBP": 0.386, "OPS": 0.684, "SLG": 0.297, "H": 10.0, "1B": 9.0, "2B": 1.0, "3B": 0.0, "HR": 0.0, "RBI": 3.0, "R": 5.0, "BB": 7.0, "SO": 11.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 10.0, "CS": 0.0, "SB%": 100.0, "name": "Below par hitter, fast"}, {"GP": 12.0, "PA": 28.0, "AB": 24.0, "AVG": 0.333, "OBP": 0.429, "OPS": 0.762, "SLG": 0.333, "H": 8.0, "1B": 8.0, "2B": 0.0, "3B": 0.0, "HR": 0.0, "RBI": 5.0, "R": 4.0, "BB": 3.0, "SO": 9.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 3.0, "CS": 0.0, "SB%": 100.0, "name": "Unreliable hitter"}, {"GP": 1.0, "PA": 2.0, "AB": 2.0, "AVG": 1.0, "OBP": 1.0, "OPS": 3.0, "SLG": 2.0, "H": 2.0, "1B": 0.0, "2B": 2.0, "3B": 0.0, "HR": 0.0, "RBI": 4.0, "R": 0.0, "BB": 0.0, "SO": 0.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 0.0, "CS": 0.0, "SB%": 0, "name": "ignore (sub)"}, {"GP": 11.0, "PA": 28.0, "AB": 19.0, "AVG": 0.421, "OBP": 0.607, "OPS": 1.239, "SLG": 0.632, "H": 8.0, "1B": 4.0, "2B": 4.0, "3B": 0.0, "HR": 0.0, "RBI": 5.0, "R": 6.0, "BB": 8.0, "SO": 2.0, "HBP": 1.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 2.0, "CS": 0.0, "SB%": 100.0, "name": "Basher, 2nd highest OPS but slow"}, {"GP": 14.0, "PA": 45.0, "AB": 31.0, "AVG": 0.387, "OBP": 0.578, "OPS": 1.191, "SLG": 0.613, "H": 12.0, "1B": 5.0, "2B": 7.0, "3B": 0.0, "HR": 0.0, "RBI": 9.0, "R": 16.0, "BB": 12.0, "SO": 9.0, "HBP": 2.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 8.0, "CS": 0.0, "SB%": 100.0, "name": "2nd best hitter"}, {"GP": 15.0, "PA": 46.0, "AB": 38.0, "AVG": 0.5, "OBP": 0.587, "OPS": 1.219, "SLG": 0.632, "H": 19.0, "1B": 14.0, "2B": 5.0, "3B": 0.0, "HR": 0.0, "RBI": 18.0, "R": 16.0, "BB": 8.0, "SO": 2.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 17.0, "CS": 1.0, "SB%": 94.44, "name": "Best hitter"}, {"GP": 14.0, "PA": 38.0, "AB": 30.0, "AVG": 0.267, "OBP": 0.421, "OPS": 0.688, "SLG": 0.267, "H": 8.0, "1B": 8.0, "2B": 0.0, "3B": 0.0, "HR": 0.0, "RBI": 3.0, "R": 8.0, "BB": 8.0, "SO": 6.0, "HBP": 0.0, "SAC": 0.0, "SF": 0.0, "ROE": 0.0, "FC": 0.0, "SB": 18.0, "CS": 0.0, "SB%": 100.0, "name": "Below par hitter, speed demon"}];
 
 
-let players=[], allImportedPlayers=[], excludedPlayers=[], paCutoff=0, stop=false, lineupLocks={}, activeDataset='Red Sox';
+let players=[], roster=[], allImportedPlayers=[], excludedPlayers=[], paCutoff=0, stop=false, lineupLocks={}, activeDataset='Red Sox';
 const statusEl=document.getElementById('status');
 const progEl=document.getElementById('prog');
 const resultsCardEl=document.getElementById('resultsCard');
@@ -503,7 +510,8 @@ function applyEligibilitySetting(rerender=true){
  if(ctl) ctl.value=pct.toFixed(2);
  const maxPA=Math.max(...allImportedPlayers.map(p=>p.PA),0);
  paCutoff=maxPA*pct;
- players=allImportedPlayers.filter(p=>p.PA>=paCutoff);
+ roster=allImportedPlayers.filter(p=>p.PA>=paCutoff);      // everyone above the PA cutoff, shown in the table
+ players=roster.filter(p=>!p.absent);                      // the ones checked as playing go into the simulation
  excludedPlayers=allImportedPlayers.filter(p=>p.PA<paCutoff);
  lastBestOrder=null; lastTopOptimizedOrders=[];
  clearAllLocks();
@@ -518,14 +526,22 @@ function recalc(p){
 }
 
 function renderPlayers(){
- document.getElementById('eligibilityNote').innerHTML=`<p class="muted">PA eligibility rule: include players with PA ≥ ${paCutoff.toFixed(1)}. Change the percentage in Settings to adjust this cutoff. Current eligible lineup pool: <b>${players.length}</b> players.</p>`;
- document.getElementById('players').innerHTML=`<table><thead><tr>${['#','Name','Pos','PA','H','1B','2B','3B','HR','BB','HBP','SO','SAC','SF','ROE','FC','SB','CS','SB att/on-base','SB att/game','SB succ','OBP-ish','SLG-ish'].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>`+
- players.map((p,i)=>`<tr><td>${i+1}</td><td><input data-i="${i}" data-k="name" value="${esc(p.name)}"></td><td><input data-i="${i}" data-k="Pos" value="${esc(p.Pos||'')}"></td>`+
+ const out=roster.length-players.length;
+ document.getElementById('eligibilityNote').innerHTML=`<p class="muted">Uncheck a player who is out (sick or absent) to leave them out of the simulation. <b>${players.length}</b> playing${out?`, <b>${out}</b> out`:''}. Players need at least ${paCutoff.toFixed(1)} PA to be listed (change the cutoff in Settings).</p>`;
+ document.getElementById('players').innerHTML=`<table><thead><tr>${['Plays','Name','Pos','PA','H','1B','2B','3B','HR','BB','HBP','SO','SAC','SF','ROE','FC','SB','CS','SB att/on-base','SB att/game','SB succ','OBP-ish','SLG-ish'].map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>`+
+ roster.map((p,i)=>`<tr class="${p.absent?'absent':''}"><td><input type="checkbox" class="plays" data-i="${i}" ${p.absent?'':'checked'} aria-label="${esc(p.name)} plays"></td><td><input data-i="${i}" data-k="name" value="${esc(p.name)}"></td><td><input data-i="${i}" data-k="Pos" value="${esc(p.Pos||'')}"></td>`+
  ['PA','H','1B','2B','3B','HR','BB','HBP','SO','SAC','SF','ROE','FC','SB','CS'].map(k=>`<td><input type="number" step="1" data-i="${i}" data-k="${k}" value="${p[k]}"></td>`).join('')+
  `<td>${p.sbAttempt.toFixed(2)}</td><td>${p.expectedStealAttemptsPerGame.toFixed(2)}</td><td><input type="number" min="0" max="1" step=".01" data-i="${i}" data-k="sbSuccess" value="${p.sbSuccess.toFixed(2)}"></td><td>${((p.H+p.BB+p.HBP)/Math.max(1,p.PA)).toFixed(3)}</td><td>${((p['1B']+2*p['2B']+3*p['3B']+4*p.HR)/Math.max(1,p.AB)).toFixed(3)}</td></tr>`).join('')+
  '</tbody></table>';
  document.getElementById('excluded').innerHTML = excludedPlayers.length ? `<h3>Excluded low-PA players</h3><p class="muted">These players/subs have fewer than half the PA of the PA leader and are not included in optimizer lineups.</p><table><thead><tr><th>Name</th><th>PA</th></tr></thead><tbody>${excludedPlayers.map(p=>`<tr><td>${esc(p.name)}</td><td>${p.PA}</td></tr>`).join('')}</tbody></table>` : `<p class="muted">No players excluded by the PA rule.</p>`;
- document.querySelectorAll('#players input').forEach(inp=>inp.onchange=e=>{let i=+e.target.dataset.i,k=e.target.dataset.k; players[i][k]=(k==='name'||k==='Pos')?e.target.value:n(e.target.value); recalc(players[i]); renderPlayers(); renderLocks();});
+ document.querySelectorAll('#players input:not(.plays)').forEach(inp=>inp.onchange=e=>{let i=+e.target.dataset.i,k=e.target.dataset.k; roster[i][k]=(k==='name'||k==='Pos')?e.target.value:n(e.target.value); recalc(roster[i]); renderPlayers(); renderLocks();});
+ document.querySelectorAll('#players input.plays').forEach(cb=>cb.onchange=e=>{
+   roster[+e.target.dataset.i].absent=!e.target.checked;
+   players=roster.filter(p=>!p.absent);
+   lastBestOrder=null; lastTopOptimizedOrders=[];
+   clearAllLocks(); renderPlayers(); renderLocks(); renderLeveragePlayerSelect();
+   try{ updateVizLineupOptions(); }catch(_){}
+ });
 }
 
 
