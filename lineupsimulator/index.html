@@ -88,7 +88,7 @@ details.more{margin-top:14px;border-top:1px solid var(--ls-line);padding-top:10p
 details.more > summary{cursor:pointer;font-weight:650}
 details.locks-box{margin-top:18px;padding-top:14px;border-top:1px solid var(--ls-line)}
 details.locks-box[open] > summary{margin-bottom:8px}
-#licenseCard{margin:16px max(16px,env(safe-area-inset-left,0px)) 24px !important}
+#licenseCard{margin:16px 0 0 !important}
 @media (max-width:640px){
   .ls-tabs{gap:4px;padding-left:8px;padding-right:8px}
   .ls-tabs button{font-size:13px;padding:8px 2px;gap:5px;white-space:normal;line-height:1.1;text-align:center}
@@ -291,6 +291,13 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
 </div>
 <div id="validationStatus"></div>
 <div id="validationResults" class="wrap"></div>
+</div>
+<div class="card" id="licenseCard" style="margin-top:16px">
+  <h2>Copyright &amp; License</h2>
+  <p><b>Copyright © 2026 Ari Shapiro. All rights reserved.</b></p>
+  <p>This software is licensed for <b>personal, non-commercial use only</b>. You may use it in its original form for personal, non-commercial purposes. Copying, modification, redistribution, sublicensing, sale, publication, commercial use, or incorporation of this software or its source code into another product or service is prohibited without the author's prior written permission.</p>
+  <p class="muted">This software is provided “as is,” without warranty of any kind, express or implied, including warranties of merchantability, fitness for a particular purpose, and noninfringement. The author shall not be liable for claims, damages, or other liability arising from use of the software.</p>
+  <p class="muted">Licensing inquiries: <a href="mailto:ariyshapiro@gmail.com">ariyshapiro@gmail.com</a></p>
 </div>
 </section>
 
@@ -1766,12 +1773,6 @@ setTimeout(()=>{try{updateVizLineupOptions();}catch(e){}},0);
   window.lsShowTab=show;
 })();
 </script>
-<div class="card" id="licenseCard" style="margin-top:16px">
-  <h2>Copyright &amp; License</h2>
-  <p><b>Copyright © 2026 Ari Shapiro. All rights reserved.</b></p>
-  <p>This software is licensed for <b>personal, non-commercial use only</b>. You may use it in its original form for personal, non-commercial purposes. Copying, modification, redistribution, sublicensing, sale, publication, commercial use, or incorporation of this software or its source code into another product or service is prohibited without the author's prior written permission.</p>
-  <p class="muted">This software is provided “as is,” without warranty of any kind, express or implied, including warranties of merchantability, fitness for a particular purpose, and noninfringement. The author shall not be liable for claims, damages, or other liability arising from use of the software.</p>
-  <p class="muted">Licensing inquiries: <a href="mailto:ariyshapiro@gmail.com">ariyshapiro@gmail.com</a></p>
-</div>
+
 </body>
 </html>

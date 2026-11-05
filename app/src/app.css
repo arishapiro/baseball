@@ -39,3 +39,6 @@ body[data-dc-tool]{--sticky-top:calc(var(--dc-bar-h) + env(safe-area-inset-top,0
 
 /* Sideways phones: a slimmer top bar leaves more room for the tools. */
 @media (orientation:landscape) and (max-height:500px){ :root{--dc-bar-h:40px} .dc-title{font-size:17px} }
+
+/* The copyright and license live behind a button on the home screen, so tool pages don't repeat them. */
+body[data-dc-tool] #licenseCard{display:none !important}
