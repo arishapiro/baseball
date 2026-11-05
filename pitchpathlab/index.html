@@ -52,6 +52,9 @@ details.display summary{cursor:pointer;font-size:13px;font-weight:600;color:var(
 svg#field{display:block;width:100%;height:auto}
 .viz-strip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:10px 14px;border-top:1px solid var(--line)}
 .viz-strip .mini{display:none}
+.panel{display:contents}
+.param-tabs{display:none}
+details.display summary .icon{display:none}
 .mini .mk{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;line-height:1.1}
 .mini b{font-family:var(--display);font-size:20px;line-height:1.1;font-variant-numeric:tabular-nums}
 #mApproach{color:var(--pitch)}
@@ -124,59 +127,96 @@ footer.credit{border-top:1px solid var(--line);padding-top:12px;font-size:13px;c
 svg text{font-family:var(--body)}
 @media (max-width:560px){.readouts{grid-template-columns:1fr 1fr}.ro.hero{grid-column:1/-1}.ro .v{font-size:22px}}
 
-/* ---------- Phones (portrait and narrow windows) ----------
-   The diagram sticks to the top while the controls scroll under it, and keeps a readable
-   fixed width that scrolls sideways. --sticky-top lets a host app with its own top bar push it down. */
-@media (max-width:700px){
-  .wrap{gap:12px;padding-block:14px 32px}
-  header{gap:6px}
-  header > p{font-size:13.5px}
-  h1{font-size:30px}
-  .byline{font-size:13px}
-  .stage-bar{padding:10px 12px;gap:10px}
-  .bar-group{width:100%}
-  .seg{flex:1 1 100%}
-  .seg button{flex:1;padding:10px 8px;font-size:14px;min-height:42px;white-space:nowrap}
-  .seg.sub .seg-lab{padding:0 6px 0 8px}
+/* ---------- Phones: one screen ----------
+   The diagram is the main area. Pitch type, presets and display options sit above it,
+   and below it a panel that scrolls on its own holds one slider at a time (picked from
+   the parameter tabs), the front toss options and the readouts. The page itself doesn't scroll.
+   --sticky-top lets a host app with its own top bar take that height off the screen. */
+@media (max-width:700px), (orientation:landscape) and (max-height:500px){
+  html,body{height:100%;overflow:hidden}
+  .wrap{display:flex;flex-direction:column;gap:8px;max-width:none;
+    height:calc(100dvh - var(--sticky-top, env(safe-area-inset-top,0px)) - env(safe-area-inset-bottom,0px));
+    padding-block:8px;overflow:hidden}
+  .wrap > header{display:none}
+
+  /* One row: pitch type, presets, display button. The front toss Match choice gets its own row under it. */
+  .stage-bar{flex:none;padding:8px;gap:8px 6px;position:relative;z-index:6;
+    display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center}
+  .bar-group{display:contents}
+  .stage-bar .seg:not(.sub){grid-column:1;grid-row:1;min-width:0}
+  .stage-bar .seg.sub{grid-column:1 / -1;grid-row:2}
+  details.display{grid-column:4;grid-row:1}
+  .seg button{padding:8px 10px;font-size:14px;min-height:40px;white-space:nowrap}
+  .seg-lab{padding:0 6px 0 8px}
   .presets{margin-left:0}
-  .presets .chip{padding:8px 10px;font-size:13px}
-  details.display summary{font-size:14px}
-  .display-body{gap:10px 16px}
+  .presets .seg-lab, .long{display:none}
+  .presets .chip{padding:8px 10px;font-size:13px;min-height:40px}
+  details.display{flex:none;flex-basis:auto;border:0;padding:0;position:static}
+  details.display summary{list-style:none;display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);
+    border-radius:6px;background:var(--bg);font-size:18px;color:var(--ink);padding:0}
+  details.display summary::-webkit-details-marker{display:none}
+  details.display summary .icon{display:inline}
+  details.display[open] summary{background:var(--ink);color:var(--bg)}
+  .display-body{position:absolute;right:8px;top:calc(100% + 6px);z-index:20;flex-direction:column;align-items:stretch;gap:10px;
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;box-shadow:0 10px 30px -10px rgba(0,0,0,.45);min-width:230px}
+  .display-body label.small{justify-content:space-between}
   .display-body select{font-size:14px;padding:6px}
 
-  .viz{position:sticky;top:var(--sticky-top, env(safe-area-inset-top,0px));z-index:5;
-       box-shadow:0 6px 14px -10px rgba(0,0,0,.45)}
+  .viz{flex:none}
   svg#field{min-width:760px}
   svg#field text{font-size:14px}
   svg#field text[font-size="13"]{font-size:16px}
-  .viz-strip{padding:8px 10px;gap:6px 14px;flex-wrap:nowrap}
+  .viz-strip{padding:6px 10px;gap:6px 14px;flex-wrap:nowrap}
   .viz-strip .timer{display:none}
   .viz-strip .mini{display:block;white-space:nowrap}
   .mini b{font-size:18px}
-  #play{min-width:0;padding:10px 14px;font-size:15px;white-space:nowrap;flex:none}
+  #play{min-width:0;padding:9px 14px;font-size:15px;white-space:nowrap;flex:none}
 
-  .readouts{grid-template-columns:1fr 1fr}
-  .ro{padding:9px 11px}
-  .ro .v{font-size:20px}
-  .ro.hero .v{font-size:34px}
-  .ro .s{font-size:11.5px}
+  .panel{display:flex;flex-direction:column;gap:10px;flex:1 1 auto;min-height:0;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:12px}
+  .panel > *{flex:none}
+  .panel > .warn{order:0}
+  .panel > .match{order:1}
+  .panel > .controls{order:2}
+  .panel > .readouts{order:3}
+  .panel > .notes{order:4}
+  .panel > .credit{order:5}
 
-  .controls{gap:10px}
-  .ctl{padding:12px;gap:6px}
+  .param-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .param-tabs button{display:grid;gap:2px;text-align:left;padding:7px 9px;min-height:48px;border-radius:6px;min-width:0;overflow:hidden}
+  .param-tabs .pl, .param-tabs .pv{overflow:hidden;text-overflow:ellipsis}
+  .param-tabs .pl{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .param-tabs .pv{font:700 15px/1.1 var(--body);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .param-tabs button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink)}
+  .param-tabs button[aria-pressed="true"] .pl, .param-tabs button[aria-pressed="true"] .pv{color:var(--bg)}
+  .controls{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+  .panel > *{min-width:0}
+  .controls .ctl{display:none}
+  .controls .ctl.on{display:grid}
+  .ctl{padding:10px 12px;gap:6px;grid-template-columns:minmax(0,1fr)}
+  .ctl > *{min-width:0}
+  .ctl-head .n{display:none}
   .ctl-row{gap:8px}
   .num input{width:62px;font-size:15px;padding:6px 4px}
-  button.step{width:40px;height:40px;font-size:20px}
+  button.step{width:42px;height:42px;font-size:20px}
   .ctl .hint{font-size:12px}
   .chips .chip{padding:7px 10px;font-size:12.5px}
-  input[type=range]{-webkit-appearance:none;appearance:none;height:40px;background:transparent}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:42px;background:transparent}
   input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:var(--line)}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;margin-top:-11px;border-radius:50%;
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;margin-top:-12px;border-radius:50%;
     background:var(--pitch);border:3px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.35)}
   input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:var(--line)}
   input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--pitch);border:3px solid var(--surface)}
 
+  .readouts{grid-template-columns:1fr 1fr}
+  .ro{padding:9px 11px}
+  .ro .v{font-size:20px}
+  .ro.hero .v{font-size:30px}
+  .ro .s{font-size:11.5px}
+
   .match{padding:12px}
-  .match h2{font-size:20px}
+  .match h2{font-size:18px}
+  #matchNote{display:none}
   .match-table{min-width:0;font-size:12.5px}
   .match-table th,.match-table td{padding:6px 6px}
   .match-table td:first-child{white-space:normal}
@@ -196,13 +236,19 @@ svg text{font-family:var(--body)}
   .match-table.opts tr.sel{background:var(--bg);border-radius:6px}
   .match-table button.use{padding:9px 14px;font-size:13px}
 }
-/* Phone turned sideways: the whole field fits across the screen, so show the diagram first. */
+
+/* Phone turned sideways: diagram on the left, controls in a side panel on the right. */
 @media (orientation:landscape) and (max-height:500px){
-  .wrap{gap:10px;padding-block:10px 28px}
-  .viz{order:-1;position:static}
-  header{order:-2;align-items:center}
-  header > p{display:none}
-  h1{font-size:24px}
+  .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(330px,40%);grid-template-rows:auto minmax(0,1fr);gap:8px 10px}
+  .param-tabs .pl{font-size:9.5px;letter-spacing:.04em}
+  .param-tabs .pv{font-size:14px}
+  .viz{grid-column:1;grid-row:1 / 3;align-self:start;max-height:100%;overflow:auto;min-width:0}
+  .stage-bar, .panel{min-width:0}
+  .stage-bar{grid-column:2;grid-row:1}
+  .panel{grid-column:2;grid-row:2}
+  .seg button{padding:7px 8px;font-size:13px;min-height:36px}
+  .presets .chip, details.display summary{min-height:36px;height:36px}
+  svg#field{min-width:640px}
 }
 </style>
 <style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font-size:14px}[hidden]{display:none!important}</style>
@@ -234,11 +280,11 @@ svg text{font-family:var(--body)}
     </div>
     <div class="bar-group presets" role="group" aria-label="Presets">
       <span class="seg-lab">Presets</span>
-      <button type="button" class="chip reset" data-preset="mlb">MLB 60′6″ · 90</button>
-      <button type="button" class="chip reset" data-preset="ll">LL 45′ · 50</button>
+      <button type="button" class="chip reset" data-preset="mlb">MLB<span class="long"> 60′6″ · 90</span></button>
+      <button type="button" class="chip reset" data-preset="ll">LL<span class="long"> 45′ · 50</span></button>
     </div>
     <details class="display" id="displayOpts">
-      <summary>Display</summary>
+      <summary><span class="long">Display</span><span class="icon" aria-hidden="true">⚙</span></summary>
       <div class="display-body">
         <label class="small">Playback
           <select id="slow">
@@ -283,6 +329,7 @@ svg text{font-family:var(--body)}
     </div>
   </section>
 
+  <div class="panel" id="panel">
   <div id="warn" class="warn" hidden></div>
 
   <section class="readouts" aria-live="polite">
@@ -368,6 +415,7 @@ svg text{font-family:var(--body)}
     <p><strong>Gravity only.</strong> Air drag and spin are left out. A real four-seam fastball's backspin holds it up, so MLB fastballs arrive about 1° to 2° flatter than this model predicts for the same speed and heights (typically 4° to 5° down). Curveballs, with topspin, come in steeper than the model. Slow the pitch down to see gravity alone push the angle past 10°.</p>
   </section>
   <footer class="credit">Pitch Path Lab, created by Ari Shapiro, PhD. Contact: <span style="user-select:all">ariyshapiro@gmail.com</span></footer>
+  </div>
 </div>
 
 <script>
@@ -621,6 +669,14 @@ svg text{font-family:var(--body)}
     $("aBat").textContent = ftin(S.bat);
     $("batHint").textContent = `Sets the strike zone: ${ftin(ZB())} to ${ftin(ZT())} (${ZB().toFixed(2)}–${ZT().toFixed(2)} ft), from the hollow below the knee to midway between belt and shoulders in a normal stance.`;
     document.querySelectorAll("#distChips .chip").forEach(c => c.setAttribute("aria-pressed", +c.dataset.v === S.dist ? "true":"false"));
+    if ($("pv_dist")){
+      $("pv_dist").textContent = ftin(S.dist);
+      $("pv_rel").textContent = ftin(S.rel);
+      $("pv_tgt").textContent = ftin(S.tgt);
+      $("pv_spd").textContent = (Math.round(S.spd*10)/10) + " mph";
+      $("pv_bat").textContent = ftin(S.bat);
+      $("pv_ext").textContent = ftin(S.ext);
+    }
   }
   function setVal(id, v){
     const el = $(id); v = Math.min(+el.max, Math.max(+el.min, +v));
@@ -891,6 +947,25 @@ svg text{font-family:var(--body)}
     closeMatch();
     Object.keys(p).forEach(k => setVal(k, p[k]));
   }));
+
+  // Phone layout: tabs pick which one slider is shown (all sliders show on wide screens).
+  const PARAMS = [["dist","Distance"],["rel","Release"],["tgt","Over plate"],["spd","Speed"],["bat","Batter"],["ext","Extension"]];
+  const tabs = document.createElement("div");
+  tabs.className = "param-tabs"; tabs.id = "paramTabs";
+  tabs.setAttribute("role", "group"); tabs.setAttribute("aria-label", "Choose a setting to adjust");
+  PARAMS.forEach(([k, lab]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.k = k;
+    b.innerHTML = `<span class="pl">${lab}</span><span class="pv" id="pv_${k}"></span>`;
+    b.addEventListener("click", () => selectParam(k));
+    tabs.appendChild(b);
+  });
+  document.querySelector(".controls").prepend(tabs);
+  function selectParam(k){
+    document.querySelectorAll(".controls .ctl").forEach(c => c.classList.toggle("on", !!c.querySelector("#" + k)));
+    tabs.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === k ? "true" : "false"));
+  }
+  selectParam("dist");
 
   syncAlt(); render(); syncModeUI(); fitScroll();
 })();
