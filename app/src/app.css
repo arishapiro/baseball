@@ -42,3 +42,9 @@ body[data-dc-tool]{--sticky-top:calc(var(--dc-bar-h) + env(safe-area-inset-top,0
 
 /* The copyright and license live behind a button on the home screen, so tool pages don't repeat them. */
 body[data-dc-tool] #licenseCard{display:none !important}
+
+/* Batting Lineup in the app: leave out the forced-slot (leverage) analysis and the
+   bottom-order / pairwise synergy analysis, and the "More analysis" heading above them. */
+body[data-dc-tool="lineup.html"] #leverageCard,
+body[data-dc-tool="lineup.html"] #explainCard,
+body[data-dc-tool="lineup.html"] .ls-sub{display:none !important}
