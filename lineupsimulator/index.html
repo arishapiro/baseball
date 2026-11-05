@@ -137,6 +137,14 @@ details.card > summary, details.locks-box > summary{cursor:pointer;padding:2px 0
   .vz-more{grid-template-columns:minmax(0,1fr);margin-top:10px}
   .vz-more .playlog{height:auto;max-height:none}
 }
+/* Settings: one parameter per line, label on the left and a small box on the right. */
+#settings .row{display:grid;grid-template-columns:minmax(0,1fr);gap:0;max-width:620px;align-items:stretch}
+#settings .row > div{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:14px;padding:7px 0;border-bottom:1px solid #eee;flex:none}
+#settings .row > div > label{margin:0;font-weight:600}
+#settings .row > div > :not(label):not(input):not(select){grid-column:1 / -1;margin-top:2px}
+#settings input[type=number]{width:4.6em;text-align:right;padding:6px;box-sizing:border-box}
+#settings select{width:auto;max-width:13em;padding:6px}
+#settings h3{margin:18px 0 4px}
 /* The model validation / calibration tools are left out of Settings. */
 #validationCard{display:none !important}
 #resultsCard{scroll-margin-top:calc(var(--sticky-top,0px) + 76px)}
@@ -1189,7 +1197,7 @@ function show(top,stopped,obpBaseline,opsBaseline,reverseObpBaseline,reverseOpsB
   <ol class="best-list">${b.order.map((p,i)=>`<li><span class="slot">${i+1}</span><span class="nm">${esc(p.name)}</span><span class="st">OBP ${statOBP(p).toFixed(3)} · OPS ${statOPS(p).toFixed(3)}</span></li>`).join('')}</ol>
   <p class="tiny muted"><b>Locked slots:</b> ${lockSummary()}</p>
  </div>
- <details class="more"><summary>Compare with other orders</summary>
+ <details class="more" open><summary>Compare with other orders</summary>
  <table><thead><tr><th>Lineup</th><th>Runs/game</th><th>Best advantage</th><th>Rank shown</th></tr></thead><tbody>
  <tr><td>Best optimized</td><td>${b.avg.toFixed(3)}</td><td>—</td><td>1</td></tr>
  <tr><td>Random-order average (${randomBaseline.count} orders)</td><td>${randomBaseline.avg.toFixed(3)}</td><td>${signed(diffRandom)} (${signedPct(pctRandom)})</td><td>baseline average</td></tr>
