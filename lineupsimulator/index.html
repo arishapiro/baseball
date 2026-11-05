@@ -55,7 +55,7 @@ code{background:#f2f2f2;padding:1px 4px;border-radius:4px}
 </style>
 
 <style>
-/* Sections: three tabs (Batters, Batting order, Settings) that stay at the top while scrolling. */
+/* Sections: tabs (Lineup, Determine Best Lineup, Watch game, Settings) that stay at the top while scrolling. */
 :root{--ls-accent:#1769e0;--ls-ink:#17212A;--ls-line:#dde3e8;--ls-bg:#f6f8fa}
 body{margin:0;background:#fff}
 .ls-head{padding:16px max(16px,env(safe-area-inset-left,0px)) 6px}
@@ -175,8 +175,8 @@ details.locks-box[open] > summary{margin-bottom:8px}
 </header>
 
 <nav class="ls-tabs" role="tablist" aria-label="Sections">
-  <button type="button" role="tab" id="tabBtn-batters" aria-controls="tab-batters" data-tab="batters"><span class="ls-n">1</span>Batters</button>
-  <button type="button" role="tab" id="tabBtn-order" aria-controls="tab-order" data-tab="order"><span class="ls-n">2</span>Batting order</button>
+  <button type="button" role="tab" id="tabBtn-batters" aria-controls="tab-batters" data-tab="batters"><span class="ls-n">1</span>Lineup</button>
+  <button type="button" role="tab" id="tabBtn-order" aria-controls="tab-order" data-tab="order"><span class="ls-n">2</span>Determine Best Lineup</button>
   <button type="button" role="tab" id="tabBtn-watch" aria-controls="tab-watch" data-tab="watch"><span class="ls-n">3</span>Watch game</button>
   <button type="button" role="tab" id="tabBtn-settings" aria-controls="tab-settings" data-tab="settings"><span class="ls-n">4</span>Settings</button>
 </nav>
@@ -207,7 +207,7 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
 <div class="card">
 <div class="run-block">
   <h2 style="margin:0 0 6px">Find the best batting order</h2>
-  <p style="margin:0 0 14px" class="muted">Simulates thousands of games for many batting orders using the batters on the <b>Batters</b> tab and the assumptions on the <b>Settings</b> tab, and keeps the order that scores the most runs.</p>
+  <p style="margin:0 0 14px" class="muted">Simulates thousands of games for many batting orders using the batters on the <b>Lineup</b> tab and the assumptions on the <b>Settings</b> tab, and keeps the order that scores the most runs.</p>
   <button id="run" class="primary" style="font-size:18px;padding:12px 24px;font-weight:700">▶ Run Optimizer</button>
   <button id="stop" style="margin-left:8px">Stop</button>
 </div>
@@ -1822,7 +1822,7 @@ document.getElementById('run').onclick=async()=>{
 normalize(EMBEDDED);
 setTimeout(()=>{try{updateVizLineupOptions();}catch(e){}},0);
 
-// ---- Sections: Batters / Batting order / Settings ----
+// ---- Sections: Lineup / Determine Best Lineup / Watch game / Settings ----
 (function(){
   const tabs=[...document.querySelectorAll('.ls-tabs [data-tab]')];
   function show(name, focus){
