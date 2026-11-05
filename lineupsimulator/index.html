@@ -87,6 +87,56 @@ details.card > summary, details.locks-box > summary{cursor:pointer;padding:2px 0
 #players td:nth-child(2),#players th:nth-child(2){position:sticky;left:1.9em;z-index:2;background:#fff;box-shadow:4px 0 6px -4px #0003}
 #players th:first-child,#players th:nth-child(2){z-index:3;background:#fafafa}
 #players td:first-child,#players th:first-child{min-width:1.6em}
+
+/* ---- Watch game: controls, field, batter and result stay together at the top ---- */
+.vz-intro{margin:0 0 10px}
+.vz-stage{display:grid;gap:10px;background:#fff}
+.vz-controls{display:flex;flex-wrap:wrap;align-items:end;gap:8px 10px}
+.vz-f{display:grid;gap:3px;margin:0;font-weight:650;font-size:12px;color:#555}
+.vz-f select,.vz-f input{font-size:14px;padding:7px;min-height:38px;box-sizing:border-box}
+.vz-lineup{flex:1 1 220px;min-width:0}.vz-lineup select{width:100%}
+.vz-games input{width:4.5em}
+.vz-btns{display:flex;gap:6px}
+.vz-btns button{min-height:38px;padding:7px 14px;font-weight:650}
+.vz-main{display:grid;grid-template-columns:minmax(260px,420px) minmax(0,1fr);gap:18px;align-items:start}
+.vz-main .diamond{margin:0;max-width:420px}
+.vz-now{display:grid;gap:8px;align-content:start}
+.vz-now p{margin:0}
+.vz-now .scoreboard{margin:0}
+.vz-now{position:relative}
+#vizRunIndicator{position:absolute;right:0;top:44px;margin:0 !important;padding:3px 10px !important;background:#fff;color:#086b08;border-color:#086b08 !important;pointer-events:none}
+.vz-more{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,340px);gap:18px;margin-top:16px;align-items:start}
+.vz-more .playlog{height:220px}
+@media (max-width:640px){
+  #gameVizCard{padding:0;border:0;box-shadow:none;margin-top:6px}
+  #gameVizCard > h2, .vz-intro{display:none}
+  /* Pinned under the tabs: controls, then the field with the score, batter and result under it. */
+  .vz-stage{position:sticky;top:calc(var(--sticky-top,0px) + 61px);z-index:20;padding:8px 0 10px;border-bottom:1px solid var(--ls-line);
+    box-shadow:0 8px 12px -12px #0006}
+  .vz-controls{gap:6px}
+  .vz-f > span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .vz-lineup{flex:1 1 100%}
+  .vz-speed{flex:1 1 0}.vz-speed select{width:100%}
+  .vz-games input{width:3.6em}
+  .vz-btns{flex:2 1 0}.vz-btns button{flex:1;padding:7px 6px}
+  .vz-main{grid-template-columns:minmax(0,1fr);gap:6px}
+  .vz-main .diamond{width:min(100%,30vh);margin:0 auto;border-radius:14px;order:0 !important}
+  .fielder{width:22px;height:22px;font-size:8.5px}
+  .base{width:13px;height:13px;margin:-6.5px !important}
+  .base-label{font-size:9px}
+  .runner{font-size:9px;padding:3px 5px;max-width:84px}
+  .vz-now{gap:5px}
+  .vz-now .scoreboard{gap:6px}
+  .vz-now .scorebox{padding:3px 6px;display:flex;align-items:baseline;justify-content:center;gap:6px;border-radius:8px}
+  .vz-now .scorebig{font-size:18px}
+  .vz-now .outcomeBox{padding:6px 12px !important;margin:0 !important;display:flex;align-items:center;gap:12px;text-align:left;min-height:0 !important}
+  .vz-now .outcomeBox > .tiny{display:none}
+  .vz-now .outcomeCode{font-size:26px !important;line-height:1.1 !important;min-width:2.4em;text-align:center;margin:0 !important}
+  .vz-now .outcomeDesc{margin:0 !important;font-size:14px}
+  .vz-last{display:none}
+  .vz-more{grid-template-columns:minmax(0,1fr);margin-top:10px}
+  .vz-more .playlog{height:auto;max-height:none}
+}
 #resultsCard{scroll-margin-top:calc(var(--sticky-top,0px) + 76px)}
 .best-order{display:grid;gap:6px}
 .best-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
@@ -112,11 +162,7 @@ details.locks-box[open] > summary{margin-bottom:8px}
   .row > div{flex:1 1 140px}
   .row input[type=number], .row select{width:100%}
   #run{width:100%}
-  .gameviz{grid-template-columns:minmax(0,1fr) !important;gap:14px}
-  .gameviz > *{min-width:0}
-  .scoreboard{gap:6px}.scorebox{padding:6px}
   #vizBatterStats{grid-template-columns:repeat(4,minmax(0,1fr)) !important}
-  #watchGame{flex:1 1 100%}
 }
 </style>
 </head>
@@ -190,22 +236,22 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
 
 <section class="ls-panel" id="tab-watch" role="tabpanel" aria-labelledby="tabBtn-watch" hidden>
 <div class="card" id="gameVizCard" style="display:none">
-<h2>Watch one simulated game</h2>
-<p class="muted">This animates one game using the same hitter event probabilities, stolen-base budgets, runner-advancement rules, and inning setting as the optimizer. The simulator models only your offense, so the opponent score is shown as 0.</p>
-<div class="row">
-  <div><label>Lineup to watch</label><select id="vizLineup"><option value="best">Latest optimized lineup</option><option value="opt1">Optimized #1</option><option value="opt2">Optimized #2</option><option value="opt3">Optimized #3</option><option value="opt4">Optimized #4</option><option value="opt5">Optimized #5</option><option value="opt6">Optimized #6</option><option value="opt7">Optimized #7</option><option value="opt8">Optimized #8</option><option value="opt9">Optimized #9</option><option value="opt10">Optimized #10</option><option value="current">Current roster order</option><option value="obp">OBP order (high → low)</option><option value="revobp">Reverse OBP (low → high)</option><option value="ops">OPS order (high → low)</option><option value="revops">Reverse OPS (low → high)</option></select></div>
-  <div><label>Animation speed</label><select id="vizSpeed"><option value="1100">Normal</option><option value="600">Fast</option><option value="250">Very fast</option></select></div>
-  <div><label>Games to watch</label><input id="vizGames" type="number" min="1" max="10000" value="1" style="width:110px"></div>
-  <button id="watchGame" class="primary">Watch simulated games</button>
-  <button id="pauseGame">Pause</button>
-  <button id="stopWatch">Stop</button>
-</div>
-<div class="gameviz">
-  <div class="lineupPanel">
-    <h3>Batting order</h3>
-    <div id="vizLineupList"></div>
+<h2>Watch a simulated game</h2>
+<p class="muted vz-intro">Plays out games with the same hitter probabilities, steals, base running and innings as the optimizer. Only your team bats, so the opponent's score stays 0.</p>
+
+<div class="vz-stage">
+  <div class="vz-controls">
+    <label class="vz-f vz-lineup"><span>Lineup</span><select id="vizLineup" aria-label="Lineup to watch"><option value="best">Latest optimized lineup</option><option value="opt1">Optimized #1</option><option value="opt2">Optimized #2</option><option value="opt3">Optimized #3</option><option value="opt4">Optimized #4</option><option value="opt5">Optimized #5</option><option value="opt6">Optimized #6</option><option value="opt7">Optimized #7</option><option value="opt8">Optimized #8</option><option value="opt9">Optimized #9</option><option value="opt10">Optimized #10</option><option value="current">Current roster order</option><option value="obp">OBP order (high → low)</option><option value="revobp">Reverse OBP (low → high)</option><option value="ops">OPS order (high → low)</option><option value="revops">Reverse OPS (low → high)</option></select></label>
+    <label class="vz-f vz-speed"><span>Speed</span><select id="vizSpeed" aria-label="Animation speed"><option value="1100">Normal</option><option value="600">Fast</option><option value="250">Very fast</option></select></label>
+    <label class="vz-f vz-games"><span>Games</span><input id="vizGames" type="number" min="1" max="10000" value="1" aria-label="Games to watch"></label>
+    <div class="vz-btns">
+      <button id="watchGame" class="primary">▶ Watch</button>
+      <button id="pauseGame">Pause</button>
+      <button id="stopWatch">Stop</button>
+    </div>
   </div>
-  <div class="diamond" id="diamond">
+  <div class="vz-main">
+    <div class="diamond" id="diamond">
     <div class="infield"></div>
     <div class="base" id="baseHome"></div><span class="base-label" id="labHome">HOME</span>
     <div class="base" id="base1"></div><span class="base-label" id="lab1">1B</span>
@@ -222,29 +268,38 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
     <div class="fielder" style="left:78%;top:20%">RF</div>
     <div id="runnerLayer"></div>
   </div>
-  <div>
-    <div class="scoreboard">
+    <div class="vz-now">
+      <div class="scoreboard">
       <div class="scorebox"><div class="muted tiny">RUNS</div><div class="scorebig" id="vizRuns">0</div></div>
       <div class="scorebox"><div class="muted tiny">INNING</div><div class="scorebig" id="vizInning">1</div></div>
       <div class="scorebox"><div class="muted tiny">OUTS</div><div class="scorebig" id="vizOuts">0</div></div>
     </div>
-    <p><b>At bat:</b> <span id="vizBatter">—</span></p>
-<div id="vizBatterStats" style="display:grid;grid-template-columns:repeat(4,minmax(58px,1fr));gap:6px;margin:8px 0 10px;">
+      <p class="vz-atbat"><b>At bat:</b> <span id="vizBatter">—</span></p>
+      <div class="outcomeBox" aria-live="polite">
+      <div class="muted tiny">AT-BAT RESULT</div>
+      <div class="outcomeCode" id="vizOutcomeCode">—</div>
+      <div class="outcomeDesc" id="vizOutcomeDesc">Ready</div>
+    </div>
+      <p class="vz-last"><b>Last play:</b> <span id="vizPlay">Ready</span> <div id="vizRunIndicator" style="display:inline-block;margin:4px 0 8px;padding:6px 12px;border:1px solid #bbb;border-radius:9px;font-weight:700;opacity:0;transform:scale(.95);transition:opacity .15s ease,transform .15s ease">RUN!</div></p>
+    </div>
+  </div>
+</div>
+
+<div class="vz-more">
+  <div class="vz-side">
+    <div id="vizBatterStats" style="display:grid;grid-template-columns:repeat(4,minmax(58px,1fr));gap:6px;margin:8px 0 10px;">
   <div class="scorebox"><div class="muted tiny">AVG</div><div id="vizBatterAVG">—</div></div>
   <div class="scorebox"><div class="muted tiny">OBP</div><div id="vizBatterOBP">—</div></div>
   <div class="scorebox"><div class="muted tiny">OPS</div><div id="vizBatterOPS">—</div></div>
   <div class="scorebox"><div class="muted tiny">SB</div><div id="vizBatterSB">—</div></div>
 </div>
-    <div class="outcomeBox" aria-live="polite">
-      <div class="muted tiny">AT-BAT RESULT</div>
-      <div class="outcomeCode" id="vizOutcomeCode">—</div>
-      <div class="outcomeDesc" id="vizOutcomeDesc">Ready</div>
-    </div>
-    <p><b>Last play:</b> <span id="vizPlay">Ready</span></p>
     <p><b>Score:</b> Red Sox <strong id="vizScore">0</strong> – Opponent <strong>0</strong></p>
-    <div id="vizRunIndicator" style="display:inline-block;margin:4px 0 8px;padding:6px 12px;border:1px solid #bbb;border-radius:9px;font-weight:700;opacity:0;transform:scale(.95);transition:opacity .15s ease,transform .15s ease">RUN!</div>
     <p><b>Game:</b> <span id="vizGameNumber">1 of 1</span> &nbsp; <b>Series runs:</b> <span id="vizSeriesRuns">0</span> &nbsp; <b>Avg:</b> <span id="vizSeriesAvg">0.00</span></p>
     <div class="playlog" id="vizLog" aria-live="polite"></div>
+  </div>
+  <div class="lineupPanel">
+    <h3>Batting order</h3>
+    <div id="vizLineupList"></div>
   </div>
 </div>
 </div>
