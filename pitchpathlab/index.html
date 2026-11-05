@@ -163,7 +163,6 @@ svg text{font-family:var(--body)}
   .display-body select{font-size:14px;padding:6px}
 
   .viz{flex:none}
-  svg#field{min-width:760px}
   svg#field text{font-size:14px}
   svg#field text[font-size="13"]{font-size:16px}
   .viz-strip{padding:6px 10px;gap:6px 14px;flex-wrap:nowrap}
@@ -248,7 +247,6 @@ svg text{font-family:var(--body)}
   .panel{grid-column:2;grid-row:2}
   .seg button{padding:7px 8px;font-size:13px;min-height:36px}
   .presets .chip, details.display summary{min-height:36px;height:36px}
-  svg#field{min-width:640px}
 }
 </style>
 <style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font-size:14px}[hidden]{display:none!important}</style>
@@ -305,6 +303,7 @@ svg text{font-family:var(--body)}
         </label>
         <label class="small">Height scale
           <select id="exag">
+            <option value="fit">Fit screen</option>
             <option value="1">True scale</option>
             <option value="2">2× tall</option>
             <option value="3" selected>3× tall</option>
@@ -427,7 +426,7 @@ svg text{font-family:var(--body)}
   const ids = ["dist","rel","tgt","spd","ext","bat"];
   const $ = id => document.getElementById(id);
   const svg = $("field");
-  let anim = null, lastSol = null, lastLabelY = 0;
+  let anim = null, lastSol = null, lastLabelY = 0, NARROW = false;
 
   const ftin = f => { const t = Math.round(f*12); const neg = t<0; const a=Math.abs(t); return (neg?"−":"")+Math.floor(a/12)+"′ "+(a%12)+"″"; };
 
@@ -456,14 +455,28 @@ svg text{font-family:var(--body)}
   // ---- drawing ----
   function render(){
     const sol = solve(); lastSol = sol;
-    const ex = +$("exag").value;
     const R = S.dist, rel = R - S.ext;
-    const sMin = -12, sMax = 79;                   // fixed distance axis, independent of settings
-    const W = 1000, padL = 46, padR = 22;
+    let sMin = -12; const sMax = 79;               // fixed distance axis, independent of settings
+    // Wide screens draw on a 1000-unit canvas. Narrow screens size the canvas to the screen
+    // (1 px = 0.75 units, so labels stay readable) and leave room on the right for the plate labels,
+    // so the whole field fits with no sideways scrolling. The scale depends only on the screen size.
+    const cw = ($("vizScroll") && $("vizScroll").clientWidth) || 1000;
+    const narrow = cw < 700; NARROW = narrow;
+    // Narrow screens drop the labels that sit right of the plate, so the field can use that width.
+    if (narrow) sMin = -2;
+    const W = narrow ? Math.round(cw/0.75) : 1000, padL = narrow ? 34 : 46, padR = narrow ? 52 : 22;
     const sx = (W - padL - padR)/(sMax - sMin);
-    const sy = sx*ex;
     const top = 8;                                  // fixed height axis: 0 to 8 ft
     const topPad = 26, botPad = 54;
+    let ex = $("exag").value === "fit" ? null : +$("exag").value;
+    if (ex === null){
+      // "Fit screen": stretch heights so the 0-8 ft axis fills the space set aside for the diagram.
+      const landscape = window.innerWidth > window.innerHeight;
+      const px = narrow ? (landscape ? window.innerHeight - 150 : Math.min(window.innerHeight*0.36, 320)) : 360;
+      const units = px * (W / Math.max(cw, 1));
+      ex = Math.min(6, Math.max(1, (units - topPad - botPad)/(top*sx)));
+    }
+    const sy = sx*ex;
     const Y0 = topPad + top*sy;
     const H = Math.round(Y0 + botPad);
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -506,7 +519,7 @@ svg text{font-family:var(--body)}
     const rY = Y0 + 20;
     for (let s=0; s<=sMax-4; s+=10){
       o += `<line x1="${X(s)}" x2="${X(s)}" y1="${Y0}" y2="${Y0+6}" stroke="var(--muted)"/>`;
-      o += `<text x="${X(s)}" y="${rY}" text-anchor="middle" font-size="11" fill="var(--muted)">${s} ft</text>`;
+      o += `<text x="${X(s)}" y="${rY}" text-anchor="middle" font-size="11" fill="var(--muted)">${narrow && s ? s : s + " ft"}</text>`;
     }
     // travel bracket
     const bY = Y0 + 38;
@@ -519,7 +532,7 @@ svg text{font-family:var(--body)}
     o += `<line x1="${X(rel)}" x2="${X(rel)}" y1="${Y(S.rel)}" y2="${Y0}" stroke="var(--muted)" stroke-dasharray="2 4"/>`;
     o += `<text x="${X(rel)-10}" y="${Y(S.rel)+4}" text-anchor="end" font-size="12" fill="var(--ink)" font-weight="600">release ${ftin(S.rel)}</text>`;
     // target height marker
-    o += `<text x="${X(PLATE_FRONT)-8}" y="${Y(S.tgt)+ (S.tgt>3.3? 18: -12)}" text-anchor="end" font-size="12" fill="var(--ink)" font-weight="600">${ftin(S.tgt)}</text>`;
+    if (!narrow) o += `<text x="${X(PLATE_FRONT)-8}" y="${Y(S.tgt)+ (S.tgt>3.3? 18: -12)}" text-anchor="end" font-size="12" fill="var(--ink)" font-weight="600">${ftin(S.tgt)}</text>`;
 
     if (sol.ok){
       const P = t => [X(rel - sol.vx*t), Y(S.rel + sol.vy0*t - 0.5*G*t*t)];
@@ -532,7 +545,7 @@ svg text{font-family:var(--body)}
         const bx = X(PLATE_FRONT) + 14;
         o += `<line x1="${bx}" x2="${bx}" y1="${Y(hS)}" y2="${Y(S.tgt)}" stroke="var(--straight)" stroke-width="1.2"/>`;
         o += `<line x1="${bx-4}" x2="${bx+4}" y1="${Y(hS)}" y2="${Y(hS)}" stroke="var(--straight)"/><line x1="${bx-4}" x2="${bx+4}" y1="${Y(S.tgt)}" y2="${Y(S.tgt)}" stroke="var(--straight)"/>`;
-        o += `<text x="${bx-8}" y="${Y(hS) - 8}" text-anchor="end" font-size="11.5" fill="var(--straight)" font-weight="600">gravity drop ${(sol.drop*12).toFixed(1)} in</text>`;
+        o += `<text x="${bx-8}" y="${Y(hS) - 8}" text-anchor="end" font-size="11.5" fill="var(--straight)" font-weight="600">${narrow ? "drop" : "gravity drop"} ${(sol.drop*12).toFixed(1)} in</text>`;
       }
       // faint reference paths to the top and bottom of the zone
       const edges = [];
@@ -559,7 +572,7 @@ svg text{font-family:var(--body)}
           const major = Math.abs(t*10 - Math.round(t*10)) < 1e-6;   // every 0.1 s
           if (major){
             o += `<circle cx="${x}" cy="${y}" r="3.8" fill="var(--surface)" stroke="var(--pitch)" stroke-width="1.5"/>`;
-            o += `<text x="${x}" y="${y+17}" text-anchor="middle" font-size="10.5" fill="var(--muted)" font-family="var(--mono)">${t.toFixed(1)} s</text>`;
+            if (!narrow) o += `<text x="${x}" y="${y+17}" text-anchor="middle" font-size="10.5" fill="var(--muted)" font-family="var(--mono)">${t.toFixed(1)} s</text>`;
           } else {
             o += `<circle cx="${x}" cy="${y}" r="2.1" fill="var(--pitch)" fill-opacity=".55"/>`;
           }
@@ -569,7 +582,7 @@ svg text{font-family:var(--body)}
       o += angleMark(X(rel), Y(S.rel), sol.vx*sx, -sol.vy0*sy, sol.release, "release", true);
       o += angleMark(X(PLATE_FRONT), Y(S.tgt), sol.vx*sx, -sol.vyf*sy, -sol.approach, "approach", false);
       const mainY = lastLabelY;
-      edges.forEach(e => {
+      if (!narrow) edges.forEach(e => {
         let y = Y(e.h) + 4;
         const gap = y - mainY;
         if (Math.abs(gap) < 18) y = mainY + (gap >= 0 ? 18 : -18);
@@ -584,7 +597,7 @@ svg text{font-family:var(--body)}
       o += `<circle cx="${X(PLATE_FRONT)}" cy="${Y(S.tgt)}" r="5" fill="none" stroke="var(--pitch)" stroke-dasharray="2 2" stroke-width="1.5"/>`;
       svg._P = null;
     }
-    if (ex>1) o += `<text x="${padL}" y="16" font-size="11" fill="var(--muted)">Heights drawn ${ex}× taller than distances; angle labels show true values.</text>`;
+    if (ex>1.05) o += `<text x="${padL}" y="16" font-size="11" fill="var(--muted)">${narrow ? `Heights ${+ex.toFixed(1)}× taller; angles are true` : `Heights drawn ${+ex.toFixed(1)}× taller than distances; angle labels show true values.`}</text>`;
     svg.innerHTML = o;
     updateReadouts(sol);
   }
@@ -592,7 +605,7 @@ svg text{font-family:var(--body)}
   // Draws a horizontal reference, the tangent, an arc between them and a label.
   function angleMark(cx, cy, dx, dy, trueDeg, kind, atStart){
     const a = Math.atan2(dy, dx);          // screen angle of travel (y down)
-    const r = 34, len = 62;
+    const r = NARROW ? 22 : 34, len = NARROW ? 36 : 62;
     let o = `<line x1="${cx}" y1="${cy}" x2="${cx+len}" y2="${cy}" stroke="var(--muted)" stroke-width="1"/>`;
     o += `<line x1="${cx}" y1="${cy}" x2="${cx+len*Math.cos(a)}" y2="${cy+len*Math.sin(a)}" stroke="var(--pitch)" stroke-width="1.2" stroke-dasharray="${atStart?'0':'4 3'}"/>`;
     if (Math.abs(a) > 0.01){
@@ -602,10 +615,12 @@ svg text{font-family:var(--body)}
     const mid = a/2, lr = r + 30;
     let lx = cx + lr*Math.cos(mid) + 8, ly = cy + lr*Math.sin(mid) + (a>0 ? 10 : -4);
     if (a < -0.05){ lx = cx + 62*Math.cos(a-0.5) + 6; ly = cy + 62*Math.sin(a-0.5) - 2; }   // upward throw: label above the path
+    let anchor = "start";
+    if (NARROW && !atStart){ lx = cx - 22; ly = cy + 30; anchor = "middle"; }   // no room right of the plate
     const word = trueDeg >= 0 ? "up" : "down";
     const txt = `${Math.abs(trueDeg).toFixed(1)}° ${word}`;
     lastLabelY = ly;
-    o += `<text x="${lx}" y="${ly}" font-size="13" font-weight="700" fill="var(--ink)" style="paint-order:stroke" stroke="var(--surface)" stroke-width="4">${txt}</text>`;
+    o += `<text x="${lx}" y="${ly}" text-anchor="${anchor}" font-size="13" font-weight="700" fill="var(--ink)" style="paint-order:stroke" stroke="var(--surface)" stroke-width="4">${txt}</text>`;
     return o;
   }
 
@@ -691,6 +706,7 @@ svg text{font-family:var(--body)}
   // point and the plate into view when both fit; otherwise show the plate end.
   function fitScroll(){
     const box = $("vizScroll");
+    return; // the diagram now always fits its box
     if (!box || box.scrollWidth <= box.clientWidth + 1) return;
     const k = svg.getBoundingClientRect().width / 1000;
     const sx = (1000 - 46 - 22)/91, X = s => 1000 - 22 - (s + 12)*sx;
@@ -936,7 +952,9 @@ svg text{font-family:var(--body)}
 
   // Display options start open on wide screens and folded away on phones.
   if (window.matchMedia("(min-width: 701px) and (min-height: 501px)").matches) $("displayOpts").open = true;
-  window.addEventListener("resize", () => fitScroll());
+  let rz = null;
+  window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(render, 120); });
+  if (window.matchMedia("(max-width: 700px), (orientation: landscape) and (max-height: 500px)").matches) $("exag").value = "fit";
 
   const PRESETS = {
     mlb: { dist:60.5, spd:90, rel:5.75, tgt:2.5, ext:6.3, bat:73/12 },
