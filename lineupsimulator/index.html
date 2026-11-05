@@ -90,6 +90,16 @@ details.card > summary, details.locks-box > summary{cursor:pointer;padding:2px 0
 #players input.plays{width:22px;height:22px;padding:0;margin:0;accent-color:var(--ls-accent);vertical-align:middle}
 #players tr.absent td:not(:first-child){opacity:.4}
 #players tr.absent input[data-k="name"]{text-decoration:line-through}
+.run-btns{display:flex;gap:10px;align-items:stretch;margin:4px 0 14px}
+.run-btns button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;border-radius:12px;font-weight:700;cursor:pointer}
+.run-go{flex:1 1 auto;font-size:18px;padding:12px 22px;box-shadow:0 2px 6px #1769e044}
+.run-go:disabled{opacity:.75;cursor:progress}
+.run-go.running span{animation:runpulse 1s ease-in-out infinite}
+@keyframes runpulse{50%{opacity:.35}}
+.run-stop{flex:0 0 auto;font-size:16px;padding:12px 20px;background:#fff;color:#a00020;border:1.5px solid #a00020}
+.run-stop:disabled{color:#999;border-color:#ccc;background:#f7f7f7;cursor:default}
+.run-btns button:focus-visible{outline:3px solid #1769e066;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){.run-go.running span{animation:none}}
 .run-opt{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 12px}
 .run-opt label{margin:0;font-weight:650}
 .run-opt input{width:5.2em;text-align:right;padding:7px;box-sizing:border-box}
@@ -178,7 +188,7 @@ details.locks-box[open] > summary{margin-bottom:8px}
   .card{padding:12px;margin:12px 0}
   .row > div{flex:1 1 140px}
   .row input[type=number], .row select{width:100%}
-  #run{width:100%}
+
   #vizBatterStats{grid-template-columns:repeat(4,minmax(0,1fr)) !important}
 }
 </style>
@@ -226,8 +236,10 @@ Mike,Jones,42,9,7,2,0,0,5,11,1,0,0,1,2,6,1</pre>
   <h2 style="margin:0 0 6px">Find the best batting order</h2>
   <p style="margin:0 0 14px" class="muted">Simulates thousands of games for many batting orders using the batters on the <b>Set Players</b> tab and the assumptions on the <b>Settings</b> tab, and keeps the order that scores the most runs.</p>
   <div class="run-opt"><label for="sims">Simulations per lineup</label><input id="sims" type="number" min="50" max="20000" value="1000" inputmode="numeric"><span class="muted tiny">More gives steadier results but takes longer.</span></div>
-  <button id="run" class="primary" style="font-size:18px;padding:12px 24px;font-weight:700">▶ Run Optimizer</button>
-  <button id="stop" style="margin-left:8px">Stop</button>
+  <div class="run-btns">
+    <button id="run" class="primary run-go" type="button"><span aria-hidden="true">▶</span> Find Best Lineup</button>
+    <button id="stop" class="run-stop" type="button" disabled><span aria-hidden="true">■</span> Stop</button>
+  </div>
 </div>
 <div class="bar" style="margin-top:14px"><div id="prog"></div></div><div id="status"></div>
 <div id="currentTestLineup" style="display:none;margin-top:12px;padding:12px 14px;border:1px solid #ddd;border-radius:8px;background:#fafafa">
@@ -1837,12 +1849,16 @@ document.getElementById('file').onchange=async e=>{
 };
 document.getElementById('eligiblePaPct').addEventListener('change',()=>applyEligibilitySetting(true));
 document.getElementById('run').onclick=async()=>{
+  const runBtn=document.getElementById('run'), stopBtn=document.getElementById('stop');
+  runBtn.disabled=true; stopBtn.disabled=false; runBtn.classList.add('running');
   try{
     await run();
   }catch(err){
     console.error('Optimizer error:',err);
     statusEl.innerHTML=`<p style="color:#b00020"><b>Optimizer error:</b> ${String(err && err.message ? err.message : err)}</p>`;
     progEl.style.width='0%';
+  }finally{
+    runBtn.disabled=false; stopBtn.disabled=true; runBtn.classList.remove('running');
   }
 }; document.getElementById('stop').onclick=()=>stop=true; document.getElementById('defaultLocks').onclick=()=>{setDefaultLocks();renderLocks();}; document.getElementById('clearLocks').onclick=clearAllLocks; document.getElementById('validateBtn').onclick=runValidation; document.getElementById('calibrateBtn').onclick=calibrateAssumptions; document.getElementById('leverageBtn').onclick=runLeverage; document.getElementById('stopLeverage').onclick=()=>stop=true; document.getElementById('turnoverBtn').onclick=runTurnoverValue; document.getElementById('stopTurnover').onclick=()=>stop=true; document.getElementById('pairwiseBtn').onclick=runPairwiseSynergy; document.getElementById('stopPairwise').onclick=()=>stop=true;
 normalize(EMBEDDED);
