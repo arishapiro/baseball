@@ -317,8 +317,8 @@ svg text{font-family:var(--body)}
       </div>
       <div class="cam-opts">
         <select id="cam3d" aria-label="Camera">
-          <option value="behind">Behind batter</option>
           <option value="eyes">Batter's eyes</option>
+          <option value="behind">Over the shoulder</option>
           <option value="catcher">Catcher</option>
         </select>
         <select id="hand3d" aria-label="Batter side">
@@ -1078,11 +1078,16 @@ svg text{font-family:var(--body)}
     dirtDark:"#9C6C45", chalk:"#FFFFFF", ink:"#17212A", ball:"#FFFFFF", path:"#D63A2F", ghost:"#3B4752",
     straight:"#2D6AA3", zone:"rgba(45,106,163,.16)", zoneEdge:"rgba(20,70,130,.85)" };
 
-  function camera(){
+  // Batter's eyes in a normal stance: standing eye level is about 94% of height, and the knee bend
+  // and lean in the stance take off a few more inches, so about 87% of height. The head sits about
+  // 2.3 ft from the middle of the plate, level with the middle of the plate.
+  const eyeHeight = () => 0.87*S.bat, EYE_X = 2.3, EYE_Y = 0.8;
+  function camera(ballPos){
     const hand = $("hand3d").value === "L" ? 1 : -1;      // a righty stands on the third-base side (x < 0)
-    const eye = 0.78*S.bat;                                // eye height in a batting stance
+    const eye = eyeHeight();
     const which = $("cam3d").value;
-    if (which === "eyes")    return { pos:[2.6*hand, 0.8, eye],       look:[0, 30, eye - 0.6], fov:58 };
+    // From the batter's eyes the head turns to follow the ball during a throw, as a hitter's does.
+    if (which === "eyes")    return { pos:[EYE_X*hand, EYE_Y, eye], look: ballPos || [0, 30, eye - 0.6], fov:55 };
     if (which === "catcher") return { pos:[0, -2.8, 3.1],             look:[0, 30, 3.0],       fov:40 };
     return                          { pos:[3.4*hand, -8.5, eye + 1.8], look:[0, 22, 1.9],       fov:46 };
   }
@@ -1132,7 +1137,8 @@ svg text{font-family:var(--body)}
     if (cv.width !== Math.round(W*dpr) || cv.height !== Math.round(H*dpr)){ cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); }
     const g = cv.getContext("2d");
     g.setTransform(dpr,0,0,dpr,0,0);
-    const cam = camera(), pr = makeProjector(cam, W, H);
+    const mainPath = pathOf(S, S.tgt);
+    const cam = camera(tBall != null && mainPath ? mainPath.at(Math.min(tBall, mainPath.T)) : null), pr = makeProjector(cam, W, H);
     const body = getComputedStyle(document.body).fontFamily;
     const font = (px, w=600) => `${w} ${px}px ${body}`;
     const fillPoly = (pts, col) => { const s = pr.poly(pts); if (s.length < 3) return; g.beginPath(); s.forEach((p,i)=> i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1])); g.closePath(); g.fillStyle = col; g.fill(); };
@@ -1247,8 +1253,11 @@ svg text{font-family:var(--body)}
     }
     // Scene note
     g.font = font(11, 600); g.textAlign = "left"; g.textBaseline = "alphabetic"; g.fillStyle = "rgba(23,33,42,.7)";
-    const camName = { behind:"Behind the batter", eyes:"Batter's eyes", catcher:"Catcher's view" }[$("cam3d").value];
-    g.fillText(`${camName} · true scale`, 10, H - 10);
+    const which = $("cam3d").value;
+    const camText = which === "eyes"
+      ? `Batter's eyes: ${ftin(eyeHeight())} up, ${EYE_X} ft from the middle of the plate (batter ${ftin(S.bat)}) · true scale`
+      : which === "behind" ? `Over the batter's shoulder, so the whole flight fits · true scale` : `Catcher's view · true scale`;
+    g.fillText(camText, 10, H - 10);
   }
 
   function setView(v){
