@@ -164,6 +164,7 @@ svg text{font-family:var(--body)}
   .stage-bar .seg.sub{grid-column:1 / -1;grid-row:2}
   details.display{grid-column:4;grid-row:1}
   .seg button{padding:8px 10px;font-size:14px;min-height:40px;white-space:nowrap}
+  .seg.sub button{white-space:normal;line-height:1.1;padding:6px 6px;font-size:13px}
   .seg-lab{padding:0 6px 0 8px}
   .presets{margin-left:0}
   .presets .seg-lab, .long{display:none}
@@ -268,6 +269,8 @@ svg text{font-family:var(--body)}
   .seg{flex:none}
   .seg-lab{display:none}
   .seg button{padding:5px 9px;font-size:13px;min-height:34px}
+  .seg.sub button{white-space:normal;line-height:1.05;max-width:6.5em;font-size:12px;padding:3px 7px}
+  .wrap:has(#tossModes:not([hidden])) .mini-speed{display:none !important}
   .presets .chip, details.display summary{min-height:34px;height:34px;padding-top:0;padding-bottom:0}
   details.display summary{width:36px}
   .viz-strip{grid-column:2;grid-row:1;align-self:stretch;background:var(--surface);border:1px solid var(--line);border-radius:6px;
@@ -353,6 +356,8 @@ svg text{font-family:var(--body)}
         <button type="button" id="matchBtn" title="Same flight time and approach angle as the game pitch">Both</button>
         <button type="button" id="matchTimeBtn" title="Same flight time as the game pitch">Flight time</button>
         <button type="button" id="matchAngleBtn" title="Same approach angle as the game pitch">Angle</button>
+        <button type="button" id="matchRelTimeBtn" title="Release where the batter sees the pitcher's release, and the same flight time">Release + time</button>
+        <button type="button" id="matchRelAngleBtn" title="Release where the batter sees the pitcher's release, and the same approach angle">Release + angle</button>
       </div>
     </div>
     <div class="bar-group presets" role="group" aria-label="Presets">
@@ -825,7 +830,20 @@ svg text{font-family:var(--body)}
     both:  { title:"Matching flight time and approach angle", btn:"matchBtn" },
     time:  { title:"Matching flight time only",               btn:"matchTimeBtn" },
     angle: { title:"Matching approach angle only",            btn:"matchAngleBtn" },
+    relTime:  { title:"Matching the release point and flight time",     btn:"matchRelTimeBtn" },
+    relAngle: { title:"Matching the release point and approach angle", btn:"matchRelAngleBtn" },
   };
+  // Release-point modes: the toss is released on the batter's line of sight to the pitcher's
+  // release point, so the batter's eyes fixate in the same spot. Height only; the model has no sideways offset.
+  const isRelMode = m => m === "relTime" || m === "relAngle";
+  const baseMode = m => m === "relTime" ? "time" : m === "relAngle" ? "angle" : m;
+  const EYE_FRAC = 0.87, EYE_Y0 = 0.8;                  // batter's eyes: share of height, distance from back of plate
+  const batterEye = () => EYE_FRAC*(ref ? ref.S.bat : S.bat);
+  function sightRel(d){                                 // release height on the line of sight, d = tosser's distance from the plate
+    const eye = batterEye(), yg = ref.S.dist - ref.S.ext;
+    return eye + (ref.rel - eye)*(d - EYE_Y0)/(yg - EYE_Y0);
+  }
+  const seenAngle = (rel, y) => Math.atan2(rel - batterEye(), y - EYE_Y0)*180/Math.PI;
   // Standard front toss spot used for the single-goal buttons: tosser on a bucket, 25 ft out.
   const TOSS_DIST = 25, TOSS_REL = 3.2;
   const travel = () => S.dist - S.ext - PLATE_FRONT;
@@ -877,6 +895,8 @@ svg text{font-family:var(--body)}
 
   // Flight-time mode lists tosser distances (from the plate) at the current release height.
   const TOSS_DISTS = [15, 20, 25, 30, 35, 40];
+  // Release point + angle usually only works from farther back, so it lists longer distances too.
+  const relDists = m => m === "relAngle" ? [15, 20, 25, 30, 35, 40, 45, 50, 55] : TOSS_DISTS;
   // Release heights offered as separate groups of distances in flight-time mode.
   const TIME_GROUPS = [
     { name:"Seated on a bucket", rel:3.2 },
@@ -885,7 +905,7 @@ svg text{font-family:var(--body)}
   function applyDist(d, rel){
     if (rel == null) rel = S.rel;
     ref.choice = null; ref.err = null;
-    const o = option(rel, "time", d - PLATE_FRONT);
+    const o = option(rel, baseMode(ref.mode) === "angle" ? "angle" : "time", d - PLATE_FRONT);
     if (!o.ok){ ref.err = `From ${d} ft with a ${ftin(rel)} release the toss can't match: ${o.why}.`; updateMatch(); return; }
     S.tgt = ref.S.tgt; $("tgt").value = S.tgt; $("tgtN").value = S.tgt;
     setVal("ext", 0);
@@ -903,7 +923,12 @@ svg text{font-family:var(--body)}
       $("match").hidden = false;
       // Flight-time mode keeps the release height already on slider 2 (the game pitch's, on first press).
       if (mode !== "both"){ setVal("ext", 0); setVal("dist", TOSS_DIST); if (mode === "angle") setVal("rel", TOSS_REL); }
-      if (mode === "time") applyDist(TOSS_DIST);
+      if (isRelMode(mode)){
+        const base = mode === "relAngle" ? "angle" : "time";
+        const d = [TOSS_DIST, ...relDists(mode)].find(d => option(sightRel(d), base, d - PLATE_FRONT).ok) ?? TOSS_DIST;
+        applyDist(d, sightRel(d));
+      }
+      else if (mode === "time") applyDist(TOSS_DIST);
       else apply(mode === "both" ? 2.0 : TOSS_REL);
       return;
     }
@@ -911,7 +936,15 @@ svg text{font-family:var(--body)}
     ref.mode = mode;
     let rel = S.rel;
     if (mode === "both" && !option(rel, "both").ok) rel = 2.0;
-    if (mode === "time"){ setVal("ext", 0); applyDist(Math.round(S.dist*2)/2); }
+    if (isRelMode(mode)){
+      setVal("ext", 0);
+      // stay at the current distance if it works; otherwise take the nearest listed distance that does
+      const here = Math.round(S.dist*2)/2, base = mode === "relAngle" ? "angle" : "time";
+      const ok = d => option(sightRel(d), base, d - PLATE_FRONT).ok;
+      const d = ok(here) ? here : (relDists(mode).find(ok) ?? here);
+      applyDist(d, sightRel(d));
+    }
+    else if (mode === "time"){ setVal("ext", 0); applyDist(Math.round(S.dist*2)/2); }
     else apply(rel);
   }
 
@@ -932,17 +965,21 @@ svg text{font-family:var(--body)}
   function updateMatch(){
     if (!ref || $("match").hidden) return;
     const c = solve(), m = ref.mode;
-    const tMatch = m !== "angle", aMatch = m !== "time";
+    const bm = baseMode(m), rMatch = isRelMode(m);
+    const tMatch = bm !== "angle", aMatch = bm !== "time";
     $("matchMode").textContent = MODES[m].title;
     syncModeUI();
     Object.entries(MODES).forEach(([k,v]) => $(v.btn).setAttribute("aria-pressed", k === m ? "true" : "false"));
 
     // options table
     const hl = on => on ? ' class="good"' : '';
-    const byDist = m === "time";
-    $("optHead").innerHTML = `<tr><th>${byDist ? "Tosser distance" : "Tosser posture"}</th><th>Release</th><th>Ball travel</th><th>Toss speed</th><th>Flight time${tMatch?' ✓':''}</th><th>Approach${aMatch?' ✓':''}</th><th></th></tr>`;
+    const byDist = bm === "time" || rMatch;
+    $("optHead").innerHTML = `<tr><th>${byDist ? "Tosser distance" : "Tosser posture"}</th><th>Release${rMatch?' ✓':''}</th><th>Ball travel</th><th>Toss speed</th><th>Flight time${tMatch?' ✓':''}</th><th>Approach${aMatch?' ✓':''}</th><th></th></tr>`;
     let rowsSrc;
-    if (byDist){
+    if (rMatch){
+      rowsSrc = [{ group:`Released on the batter's line of sight to the pitcher's release point` }];
+      relDists(m).forEach(d => rowsSrc.push({ name:`${d} ft from plate`, rel:sightRel(d), L:d - PLATE_FRONT, d }));
+    } else if (byDist){
       const groups = TIME_GROUPS.slice();
       if (!groups.some(g => Math.abs(g.rel - ref.rel) < 0.01)) groups.push({ name:"Same release as game pitch", rel:ref.rel });
       rowsSrc = [];
@@ -953,13 +990,13 @@ svg text{font-family:var(--body)}
     } else rowsSrc = POSTURES;
     $("optBody").innerHTML = rowsSrc.map((p,i) => {
       if (p.group) return `<tr class="grp"><td colspan="7">${p.group}</td></tr>`;
-      const o = option(p.rel, m, byDist ? p.L : undefined);
-      const sel = byDist ? (S.ext === 0 && Math.abs(S.dist - p.d) < 0.01 && Math.abs(S.rel - p.rel) < 0.01)
+      const o = option(p.rel, bm, byDist ? p.L : undefined);
+      const sel = !o.ok ? false : byDist ? (S.ext === 0 && Math.abs(S.dist - p.d) < 0.01 && Math.abs(S.rel - p.rel) < 0.01)
                          : (ref.choice != null && Math.abs(ref.choice - p.rel) < 0.001);
       const cells = o.ok
         ? `<td data-l="Travel">${o.L.toFixed(1)} ft</td><td data-l="Speed">${o.spd.toFixed(1)} mph</td><td data-l="Flight"${hl(tMatch)}>${o.t.toFixed(3)} s</td><td data-l="Angle"${hl(aMatch)}>${o.approach.toFixed(1)}°</td>`
         : `<td colspan="4" class="na">${o.why}</td>`;
-      return `<tr class="${sel?'sel':''}"><td>${p.name}</td><td>${ftin(p.rel)}</td>${cells}<td class="act"><button type="button" class="use" data-i="${i}" ${o.ok?'':'disabled'}>${sel?'Selected':'Use'}</button></td></tr>`;
+      return `<tr class="${sel?'sel':''}"><td>${p.name}</td><td${rMatch?' class="good"':''}>${ftin(p.rel)}</td>${cells}<td class="act"><button type="button" class="use" data-i="${i}" ${o.ok?'':'disabled'}>${sel?'Selected':'Use'}</button></td></tr>`;
     }).join("");
     $("optBody").querySelectorAll("button.use").forEach(btn => btn.addEventListener("click", () => {
       const r = rowsSrc[+btn.dataset.i];
@@ -971,14 +1008,16 @@ svg text{font-family:var(--body)}
     if (byDist){
       fine.min = 8; fine.max = 45; fine.step = 0.5; fine.value = S.dist;
       $("tossLab").textContent = "Fine-tune distance";
-      const cd = option(S.rel, "time", S.dist - PLATE_FRONT);
-      $("tossRelV").textContent = `${S.dist.toFixed(1)} ft → ` + (cd.ok ? `${cd.spd.toFixed(1)} mph, arrives at ${cd.approach.toFixed(1)}°` : cd.why);
+      const fr = rMatch ? sightRel(S.dist) : S.rel;
+      const cd = option(fr, bm === "angle" ? "angle" : "time", S.dist - PLATE_FRONT);
+      $("tossRelV").textContent = `${S.dist.toFixed(1)} ft → ` + (rMatch ? `release ${ftin(fr)}, ` : "") + (cd.ok
+        ? `${cd.spd.toFixed(1)} mph, ` + (bm === "angle" ? `takes ${cd.t.toFixed(3)} s` : `arrives at ${cd.approach.toFixed(1)}°`) : cd.why);
     } else {
     fine.min = 0.5; fine.max = 6; fine.step = 0.05;
     $("tossLab").textContent = "Fine-tune release height";
     const ch = ref.choice == null ? S.rel : ref.choice;
     fine.value = ch;
-    const cur = option(ch, m);
+    const cur = option(ch, bm);
     $("tossRelV").textContent = ftin(ch) + (cur.ok
       ? ` → ${cur.L.toFixed(1)} ft travel, ${cur.spd.toFixed(1)} mph` + (m === "time" ? `, arrives at ${cur.approach.toFixed(1)}°` : m === "angle" ? `, takes ${cur.t.toFixed(3)} s` : "")
       : ` → ${cur.why}`);
@@ -997,6 +1036,7 @@ svg text{font-family:var(--body)}
       ["Release speed", ref.spd, S.spd, " mph", 1, null, false],
       ["Ball travel distance", ref.L, c.L, " ft", 1, null, false],
       ["Release height", ref.rel, S.rel, " ft", 2, null, false],
+      ["Release as the batter sees it (° above eye level)", seenAngle(ref.rel, ref.S.dist - ref.S.ext), seenAngle(S.rel, S.dist - S.ext), "°", 1, 0.15, rMatch],
       ["Height over plate", ref.S.tgt, S.tgt, " ft", 2, null, false],
     ];
     $("matchBody").innerHTML = rows.map(([k,a,b,u,dp,tol,target]) => {
@@ -1010,13 +1050,20 @@ svg text{font-family:var(--body)}
       ? `Every option arrives in ${ref.t.toFixed(3)} s and drops in at ${ref.approach.toFixed(1)}° down, the same as the game pitch. Pick how the tosser releases the ball; the page sets the distance and speed.`
       : m === "time"
       ? `Every option arrives in ${ref.t.toFixed(3)} s, the same as the game pitch. The approach angle is not matched. Options are grouped by how the tosser releases the ball; pick a group and a distance and the page sets the speed. The fine-tune slider moves the distance at the current release height (${ftin(S.rel)}).`
+      : m === "relTime"
+      ? `Every option is released on the batter's line of sight to the pitcher's release point (${ftin(ref.rel)} from ${(ref.S.dist - ref.S.ext).toFixed(1)} ft, seen from eyes at ${ftin(batterEye())}), so the batter's eyes fixate in the same place, and arrives in ${ref.t.toFixed(3)} s. The approach angle is not matched. Pick a distance and the page sets the release height and speed.`
+      : m === "relAngle"
+      ? `Every option is released on the batter's line of sight to the pitcher's release point (${ftin(ref.rel)} from ${(ref.S.dist - ref.S.ext).toFixed(1)} ft, seen from eyes at ${ftin(batterEye())}), so the batter's eyes fixate in the same place, and drops in at ${ref.approach.toFixed(1)}° down. Flight time is not matched. Pick a distance and the page sets the release height and speed.`
       : `Every option drops in at ${ref.approach.toFixed(1)}° down, the same as the game pitch, from the current ${travel().toFixed(1)} ft of travel. Flight time is not matched. Pick a release height and the page sets the speed. To try another distance, move slider 1 and click Match approach angle again.`) + tail;
   }
-  $("tossRel").addEventListener("input", e => { if (!ref) return; ref.mode === "time" ? applyDist(+e.target.value) : apply(+e.target.value); });
+  $("tossRel").addEventListener("input", e => { if (!ref) return; const v = +e.target.value;
+    if (isRelMode(ref.mode)) applyDist(v, sightRel(v)); else if (ref.mode === "time") applyDist(v); else apply(v); });
 
   $("matchBtn").addEventListener("click", () => startMatch("both"));
   $("matchTimeBtn").addEventListener("click", () => startMatch("time"));
   $("matchAngleBtn").addEventListener("click", () => startMatch("angle"));
+  $("matchRelTimeBtn").addEventListener("click", () => startMatch("relTime"));
+  $("matchRelAngleBtn").addEventListener("click", () => startMatch("relAngle"));
   $("gameBtn").addEventListener("click", () => {
     if (!ref) return;
     const g = ref.S; closeMatch();
@@ -1254,6 +1301,10 @@ svg text{font-family:var(--body)}
       const gp = pathOf(ref.S, ref.S.tgt);
       if (gp){
         drawPath(gp, "rgba(59,71,82,.75)", 2.5);
+        if (isRelMode(ref.mode)){
+          const hand = $("hand3d").value === "L" ? 1 : -1;
+          strokeLine([[EYE_X*hand, EYE_Y, eyeHeight()], gp.at(0)], "rgba(255,255,255,.8)", 1.3, [6,5]);
+        }
         releaseMark(gp, SCENE.ghost, `game pitch ${ftin(ref.S.rel)}`, -1);
       }
     }
