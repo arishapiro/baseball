@@ -56,6 +56,10 @@ details.display summary{cursor:pointer;font-size:13px;font-weight:600;color:var(
 .view-switch button{padding:6px 11px;font-size:12.5px;min-height:32px}
 .cam-opts{position:absolute;top:8px;right:8px;z-index:3;display:none;gap:6px}
 .viz-scroll.is3d .cam-opts{display:flex}
+.focus-opt{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;background:var(--surface);color:var(--ink);
+  border:1px solid var(--line);border-radius:6px;padding:0 9px;min-height:32px;box-shadow:0 1px 4px rgba(0,0,0,.18);cursor:pointer;white-space:nowrap}
+.focus-opt input{width:16px;height:16px;margin:0;accent-color:var(--pitch)}
+.cam-opts{flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 190px)}
 .cam-opts select{font-size:12.5px;padding:5px 6px;min-height:32px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 svg#field{display:block;width:100%;height:auto}
 .viz-strip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:10px 14px;border-top:1px solid var(--line)}
@@ -325,6 +329,7 @@ svg text{font-family:var(--body)}
           <option value="R">Righty</option>
           <option value="L">Lefty</option>
         </select>
+        <label class="focus-opt" id="focusOpt"><input type="checkbox" id="focus3d"> Sharp vision</label>
       </div>
     </div>
     <div class="viz-strip">
@@ -1087,9 +1092,48 @@ svg text{font-family:var(--body)}
     const eye = eyeHeight();
     const which = $("cam3d").value;
     // From the batter's eyes the head turns to follow the ball during a throw, as a hitter's does.
-    if (which === "eyes")    return { pos:[EYE_X*hand, EYE_Y, eye], look: ballPos || [0, 30, eye - 0.6], fov:55 };
+    if (which === "eyes"){
+      // Before the pitch a hitter watches the release point; with sharp vision only, aim the view there.
+      const rest = focusOn() && lastPath ? lastPath.at(0) : [0, 30, eye - 0.6];
+      return { pos:[EYE_X*hand, EYE_Y, eye], look: ballPos || rest, fov:55 };
+    }
     if (which === "catcher") return { pos:[0, -2.8, 3.1],             look:[0, 30, 3.0],       fov:40 };
     return                          { pos:[3.4*hand, -8.5, eye + 1.8], look:[0, 22, 1.9],       fov:46 };
+  }
+
+  let lastPath = null;
+  const focusOn = () => $("cam3d").value === "eyes" && $("focus3d").checked;
+  // Sharp vision: about 2 degrees across (the fovea), fading out by about 9 degrees from the
+  // point of gaze; everything further out is drawn blurred and dimmed, as peripheral vision is.
+  const FOVEA_DEG = 1, FADE_DEG = 9;
+  const blurSmall = document.createElement("canvas"), blurBig = document.createElement("canvas");
+  function foveate(g, fx, fy, fpx){
+    const Wd = cv.width, Hd = cv.height, dpr = Wd / Math.max(1, cv.clientWidth);
+    blurBig.width = Wd; blurBig.height = Hd;
+    const bc = blurBig.getContext("2d");
+    bc.setTransform(1,0,0,1,0,0); bc.globalCompositeOperation = "source-over";
+    if ("filter" in bc){
+      // Gaussian blur where the browser supports canvas filters
+      bc.filter = `blur(${Math.round(7*dpr)}px)`; bc.drawImage(cv, 0, 0); bc.filter = "none";
+    } else {
+      // otherwise shrink in two steps and scale back up, which softens much like a blur
+      blurSmall.width = Math.max(8, Math.round(Wd/4)); blurSmall.height = Math.max(8, Math.round(Hd/4));
+      const sc = blurSmall.getContext("2d"); sc.imageSmoothingEnabled = true;
+      sc.drawImage(cv, 0, 0, blurSmall.width, blurSmall.height);
+      sc.drawImage(blurSmall, 0, 0, blurSmall.width, blurSmall.height, 0, 0, blurSmall.width/3, blurSmall.height/3);
+      bc.imageSmoothingEnabled = true; bc.imageSmoothingQuality = "high";
+      bc.drawImage(blurSmall, 0, 0, blurSmall.width/3, blurSmall.height/3, 0, 0, Wd, Hd);
+    }
+    bc.fillStyle = "rgba(25,32,38,.28)"; bc.fillRect(0, 0, Wd, Hd);
+    const r1 = fpx*Math.tan(FOVEA_DEG*Math.PI/180)*dpr, r2 = fpx*Math.tan(FADE_DEG*Math.PI/180)*dpr;
+    const grad = bc.createRadialGradient(fx*dpr, fy*dpr, r1, fx*dpr, fy*dpr, r2);
+    grad.addColorStop(0, "rgba(0,0,0,1)"); grad.addColorStop(1, "rgba(0,0,0,0)");
+    bc.globalCompositeOperation = "destination-out";
+    bc.fillStyle = grad; bc.beginPath(); bc.arc(fx*dpr, fy*dpr, r2, 0, 2*Math.PI); bc.fill();
+    bc.beginPath(); bc.arc(fx*dpr, fy*dpr, r1, 0, 2*Math.PI); bc.fillStyle = "#000"; bc.fill();
+    g.save(); g.setTransform(1,0,0,1,0,0); g.drawImage(blurBig, 0, 0); g.restore();
+    // a faint ring marks the 2-degree sharp spot
+    g.beginPath(); g.arc(fx, fy, r1/dpr, 0, 2*Math.PI); g.strokeStyle = "rgba(255,255,255,.7)"; g.lineWidth = 1; g.stroke();
   }
 
   function makeProjector(cam, W, H){
@@ -1112,6 +1156,7 @@ svg text{font-family:var(--body)}
       return out.map(scr);
     }
     return {
+      fpx,
       pt: p => { const c = toCam(p); return c[2] < NEAR ? null : { x: scr(c)[0], y: scr(c)[1], depth: c[2] }; },
       poly: (pts, closed=true) => clip(pts.map(toCam), closed),
       scale: depth => fpx/depth
@@ -1137,7 +1182,7 @@ svg text{font-family:var(--body)}
     if (cv.width !== Math.round(W*dpr) || cv.height !== Math.round(H*dpr)){ cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); }
     const g = cv.getContext("2d");
     g.setTransform(dpr,0,0,dpr,0,0);
-    const mainPath = pathOf(S, S.tgt);
+    const mainPath = pathOf(S, S.tgt); lastPath = mainPath;
     const cam = camera(tBall != null && mainPath ? mainPath.at(Math.min(tBall, mainPath.T)) : null), pr = makeProjector(cam, W, H);
     const body = getComputedStyle(document.body).fontFamily;
     const font = (px, w=600) => `${w} ${px}px ${body}`;
@@ -1251,11 +1296,17 @@ svg text{font-family:var(--body)}
         g.lineWidth = Math.max(1.2, rb*0.18); g.strokeStyle = SCENE.path; g.stroke();
       }
     }
+    // Sharp vision only: blur and dim everything outside the point of gaze
+    if (focusOn() && mainPath){
+      const gaze = pr.pt(tBall != null ? mainPath.at(Math.min(tBall, mainPath.T)) : mainPath.at(0));
+      if (gaze) foveate(g, gaze.x, gaze.y, pr.fpx);
+    }
     // Scene note
     g.font = font(11, 600); g.textAlign = "left"; g.textBaseline = "alphabetic"; g.fillStyle = "rgba(23,33,42,.7)";
     const which = $("cam3d").value;
     const camText = which === "eyes"
-      ? `Batter's eyes: ${ftin(eyeHeight())} up, ${EYE_X} ft from the middle of the plate (batter ${ftin(S.bat)}) · true scale`
+      ? (focusOn() ? (W < 560 ? `Sharp vision ≈ 2° (ring); the rest is blurred` : `Sharp vision: about 2° (the ring) around where the batter looks; the rest is blurred`)
+                   : `Batter's eyes: ${ftin(eyeHeight())} up, ${EYE_X} ft from the middle of the plate (batter ${ftin(S.bat)}) · true scale`)
       : which === "behind" ? `Over the batter's shoulder, so the whole flight fits · true scale` : `Catcher's view · true scale`;
     g.fillText(camText, 10, H - 10);
   }
@@ -1271,8 +1322,12 @@ svg text{font-family:var(--body)}
   }
   $("view2d").addEventListener("click", () => setView("2d"));
   $("view3d").addEventListener("click", () => setView("3d"));
-  ["cam3d","hand3d"].forEach(id => $(id).addEventListener("change", () => { try { localStorage.setItem("ppl_" + id, $(id).value); } catch (_) {} draw3D(); }));
+  const syncFocusOpt = () => { $("focusOpt").hidden = $("cam3d").value !== "eyes"; };
+  ["cam3d","hand3d"].forEach(id => $(id).addEventListener("change", () => { try { localStorage.setItem("ppl_" + id, $(id).value); } catch (_) {} syncFocusOpt(); draw3D(); }));
+  $("focus3d").addEventListener("change", () => { try { localStorage.setItem("ppl_focus", $("focus3d").checked ? "1" : "0"); } catch (_) {} draw3D(); });
+  try { $("focus3d").checked = localStorage.getItem("ppl_focus") === "1"; } catch (_) {}
   try { ["cam3d","hand3d"].forEach(id => { const v = localStorage.getItem("ppl_" + id); if (v) $(id).value = v; }); } catch (_) {}
+  syncFocusOpt();
   window.__ppl3d = true;
 
   syncAlt(); render(); syncModeUI(); fitScroll();
