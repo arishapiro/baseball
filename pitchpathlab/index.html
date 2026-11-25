@@ -48,7 +48,15 @@ details.display summary{cursor:pointer;font-size:13px;font-weight:600;color:var(
 .display-body{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding-top:8px}
 .display-body label.small{display:inline-flex;align-items:center;gap:8px}
 .viz{background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.viz-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.viz-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;position:relative}
+#field3d{display:none;width:100%;aspect-ratio:16 / 9;max-height:72vh}
+.viz-scroll.is3d #field3d{display:block}
+.viz-scroll.is3d svg#field{display:none}
+.view-switch{position:absolute;top:8px;left:8px;z-index:3;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.view-switch button{padding:6px 11px;font-size:12.5px;min-height:32px}
+.cam-opts{position:absolute;top:8px;right:8px;z-index:3;display:none;gap:6px}
+.viz-scroll.is3d .cam-opts{display:flex}
+.cam-opts select{font-size:12.5px;padding:5px 6px;min-height:32px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 svg#field{display:block;width:100%;height:auto}
 .viz-strip{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:10px 14px;border-top:1px solid var(--line)}
 .viz-strip .mini{display:none}
@@ -168,6 +176,8 @@ svg text{font-family:var(--body)}
   .display-body select{font-size:14px;padding:6px}
 
   .viz{flex:none}
+  #field3d{aspect-ratio:1 / 0.9;max-height:44vh}
+  .view-switch button{padding:6px 9px;font-size:12px}
   svg#field text{font-size:14px}
   svg#field text[font-size="13"]{font-size:16px}
   .viz-strip{padding:6px 10px;gap:6px 14px;flex-wrap:nowrap}
@@ -263,6 +273,7 @@ svg text{font-family:var(--body)}
   .mini b{font-size:16px}
   .viz-scroll{grid-column:1 / -1;grid-row:2;min-height:0;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:6px}
   svg#field{width:100%;height:100%}
+  #field3d{width:100%;height:100%;aspect-ratio:auto;max-height:none}
   .panel{grid-column:1 / -1;grid-row:3;max-height:104px;gap:6px;padding-bottom:4px}
   .panel > .controls{order:1}
   .panel > .match{order:2}
@@ -299,6 +310,22 @@ svg text{font-family:var(--body)}
   <section class="viz" aria-label="Side view of the pitch">
     <div class="viz-scroll" id="vizScroll">
       <svg id="field" viewBox="0 0 1000 420" role="img" aria-label="Pitch trajectory diagram"></svg>
+      <canvas id="field3d" role="img" aria-label="3D view of the pitch from the batter's side of home plate"></canvas>
+      <div class="view-switch seg" role="group" aria-label="View">
+        <button type="button" id="view2d" aria-pressed="true">Side</button>
+        <button type="button" id="view3d" aria-pressed="false">Batter's view</button>
+      </div>
+      <div class="cam-opts">
+        <select id="cam3d" aria-label="Camera">
+          <option value="behind">Behind batter</option>
+          <option value="eyes">Batter's eyes</option>
+          <option value="catcher">Catcher</option>
+        </select>
+        <select id="hand3d" aria-label="Batter side">
+          <option value="R">Righty</option>
+          <option value="L">Lefty</option>
+        </select>
+      </div>
     </div>
     <div class="viz-strip">
       <button id="play" class="primary" type="button">▶ Throw</button>
@@ -634,7 +661,9 @@ svg text{font-family:var(--body)}
       o += `<circle cx="${X(PLATE_FRONT)}" cy="${Y(S.tgt)}" r="5" fill="none" stroke="var(--pitch)" stroke-dasharray="2 2" stroke-width="1.5"/>`;
       svg._P = null;
     }
-    if (ex>1.05) o += `<text x="${padL}" y="16" font-size="11" fill="var(--muted)">${narrow ? `Heights ${+ex.toFixed(1)}× taller; angles are true` : `Heights drawn ${+ex.toFixed(1)}× taller than distances; angle labels show true values.`}</text>`;
+    const swW = (($("vizScroll").querySelector(".view-switch")||{}).offsetWidth || 0);
+    const hx = swW ? (swW + 18) * (W / Math.max(cw,1)) : padL;
+    if (ex>1.05) o += `<text x="${hx}" y="16" font-size="11" fill="var(--muted)">${narrow ? `Heights ${+ex.toFixed(1)}× taller; angles are true` : `Heights drawn ${+ex.toFixed(1)}× taller than distances; angle labels show true values.`}</text>`;
     svg.innerHTML = o;
     updateReadouts(sol);
   }
@@ -689,6 +718,7 @@ svg text{font-family:var(--body)}
     $("mTime").textContent = sol.t.toFixed(3) + " s";
     $("mSpeed").textContent = (Math.round(S.spd*10)/10) + " mph";
     if (typeof updateMatch === "function") updateMatch();
+    if (window.__ppl3d) draw3D();
   }
 
   // ---- animation ----
@@ -697,6 +727,19 @@ svg text{font-family:var(--body)}
     cancelAnimationFrame(anim);
     const slow = +$("slow").value;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (VIEW === "3d"){
+      const T = lastSol.t;
+      if (reduce){ draw3D(T); return; }
+      const t0 = performance.now();
+      const step3 = now => {
+        const t = Math.min(T, (now - t0)/1000/slow);
+        draw3D(t);
+        $("timer").textContent = `t = ${t.toFixed(3)} s`;
+        if (t < T) anim = requestAnimationFrame(step3);
+      };
+      anim = requestAnimationFrame(step3);
+      return;
+    }
     const ball = document.getElementById("ball");
     const T = lastSol.t, P = svg._P;
     if (reduce){ const [x,y]=P(T); ball.setAttribute("cx",x); ball.setAttribute("cy",y); return; }
@@ -1023,7 +1066,208 @@ svg text{font-family:var(--body)}
   }
   selectParam("dist");
 
+  // ---- 3D batter's view ----
+  // A true-scale scene (no height stretching) seen from one of three fixed camera spots.
+  // World axes, in feet: x across the plate (+ toward first base, as the catcher sees it),
+  // y from the back point of home plate toward the pitcher, z up from the field.
+  // The camera does not move when the sliders change, so only the pitch changes.
+  let VIEW = "2d", anim3d = null;
+  try { const v = localStorage.getItem("pplView"); if (v === "3d") VIEW = "3d"; } catch (_) {}
+  const cv = $("field3d");
+  const SCENE = { skyTop:"#8FB9DD", skyLow:"#DCEAF4", grass:"#4F8A45", grassFar:"#6E9F5F", dirt:"#B88458",
+    dirtDark:"#9C6C45", chalk:"#FFFFFF", ink:"#17212A", ball:"#FFFFFF", path:"#D63A2F", ghost:"#3B4752",
+    straight:"#2D6AA3", zone:"rgba(45,106,163,.16)", zoneEdge:"rgba(20,70,130,.85)" };
+
+  function camera(){
+    const hand = $("hand3d").value === "L" ? 1 : -1;      // a righty stands on the third-base side (x < 0)
+    const eye = 0.78*S.bat;                                // eye height in a batting stance
+    const which = $("cam3d").value;
+    if (which === "eyes")    return { pos:[2.6*hand, 0.8, eye],       look:[0, 30, eye - 0.6], fov:58 };
+    if (which === "catcher") return { pos:[0, -2.8, 3.1],             look:[0, 30, 3.0],       fov:40 };
+    return                          { pos:[3.4*hand, -8.5, eye + 1.8], look:[0, 22, 1.9],       fov:46 };
+  }
+
+  function makeProjector(cam, W, H){
+    const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]], dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+    const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+    const norm=a=>{const l=Math.hypot(...a);return [a[0]/l,a[1]/l,a[2]/l];};
+    const f = norm(sub(cam.look, cam.pos)), r = norm(cross(f,[0,0,1])), u = cross(r,f);
+    const fpx = (H/2)/Math.tan(cam.fov*Math.PI/360), NEAR = 0.3;
+    const toCam = p => { const d = sub(p, cam.pos); return [dot(d,r), dot(d,u), dot(d,f)]; };
+    const scr = c => [W/2 + fpx*c[0]/c[2], H/2 - fpx*c[1]/c[2]];
+    // Clip a polygon or polyline (camera space) against the near plane, then project it.
+    function clip(cs, closed){
+      const out=[], n=cs.length, lim = closed ? n : n-1;
+      for (let i=0;i<lim;i++){
+        const a=cs[i], b=cs[(i+1)%n], ina=a[2]>=NEAR, inb=b[2]>=NEAR;
+        if (ina && (i===0 || !closed)) { if (!out.length || out[out.length-1]!==a) out.push(a); }
+        if (ina !== inb){ const t=(NEAR-a[2])/(b[2]-a[2]); out.push([a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, NEAR]); }
+        if (inb) out.push(b);
+      }
+      return out.map(scr);
+    }
+    return {
+      pt: p => { const c = toCam(p); return c[2] < NEAR ? null : { x: scr(c)[0], y: scr(c)[1], depth: c[2] }; },
+      poly: (pts, closed=true) => clip(pts.map(toCam), closed),
+      scale: depth => fpx/depth
+    };
+  }
+
+  // Path of a pitch for a given setup, using the same physics as the side view.
+  function pathOf(P, tgt){
+    const v = P.spd*MPH, L = P.dist - P.ext - PLATE_FRONT, dy = tgt - P.rel;
+    const k = G*L*L/(2*v*v), disc = L*L - 4*k*(k+dy);
+    if (L <= 1 || disc < 0) return null;
+    const th = Math.atan((L - Math.sqrt(disc))/(2*k));
+    const vx = v*Math.cos(th), vy0 = v*Math.sin(th), T = L/vx;
+    const y0 = P.dist - P.ext;
+    return { T, y0, rel:P.rel, vx, vy0, at: t => [0, y0 - vx*t, P.rel + vy0*t - 0.5*G*t*t],
+      approach: Math.atan2(-(vy0 - G*T), vx)*180/Math.PI };
+  }
+
+  function draw3D(tBall){
+    if (VIEW !== "3d") return;
+    const box = $("vizScroll"), dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const W = Math.max(200, cv.clientWidth), H = Math.max(150, cv.clientHeight);
+    if (cv.width !== Math.round(W*dpr) || cv.height !== Math.round(H*dpr)){ cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); }
+    const g = cv.getContext("2d");
+    g.setTransform(dpr,0,0,dpr,0,0);
+    const cam = camera(), pr = makeProjector(cam, W, H);
+    const body = getComputedStyle(document.body).fontFamily;
+    const font = (px, w=600) => `${w} ${px}px ${body}`;
+    const fillPoly = (pts, col) => { const s = pr.poly(pts); if (s.length < 3) return; g.beginPath(); s.forEach((p,i)=> i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1])); g.closePath(); g.fillStyle = col; g.fill(); };
+    const strokeLine = (pts, col, w=1.5, dash=[]) => { const s = pr.poly(pts,false); if (s.length < 2) return; g.beginPath(); s.forEach((p,i)=> i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1])); g.strokeStyle = col; g.lineWidth = w; g.setLineDash(dash); g.stroke(); g.setLineDash([]); };
+    const circle = (cx, cy, r, z=0, n=48) => Array.from({length:n}, (_,i)=>{ const a=i/n*2*Math.PI; return [cx + r*Math.cos(a), cy + r*Math.sin(a), z]; });
+    const label = (p, text, col="#fff", px=12, align="center", dy=0, dx=0) => { const q = pr.pt(p); if (!q) return;
+      g.font = font(px, 700); g.textBaseline = "middle";
+      const w = g.measureText(text).width; let x = q.x + (align === "left" ? dx : align === "right" ? -dx : 0);
+      if (align === "left" && x + w > W - 6) { align = "right"; x = q.x - dx; }
+      if (align === "right" && x - w < 6) { align = "left"; x = q.x + dx; }
+      g.textAlign = align; g.lineWidth = 3.5; g.strokeStyle = "rgba(0,0,0,.55)";
+      g.strokeText(text, x, q.y + dy); g.fillStyle = col; g.fillText(text, x, q.y + dy); };
+
+    // Sky and field
+    const sky = g.createLinearGradient(0,0,0,H); sky.addColorStop(0, SCENE.skyTop); sky.addColorStop(1, SCENE.skyLow);
+    g.fillStyle = sky; g.fillRect(0,0,W,H);
+    fillPoly([[-600,-60,0],[600,-60,0],[600,600,0],[-600,600,0]], SCENE.grass);
+    for (let y = 20; y < 400; y += 40) fillPoly([[-600,y,0],[600,y,0],[600,y+20,0],[-600,y+20,0]], SCENE.grassFar);
+    // Foul lines and the dirt circle around home plate
+    fillPoly(circle(0, 0.7, 13), SCENE.dirt);
+    strokeLine([[0,0,0],[-300,300,0]], SCENE.chalk, 2);
+    strokeLine([[0,0,0],[300,300,0]], SCENE.chalk, 2);
+
+    // Mound (40 ft and beyond) or a spot of flat ground where the thrower stands
+    const R = S.dist;
+    if (R >= 40){
+      fillPoly(circle(0, R - 1.5, 9), SCENE.dirt);
+      fillPoly(circle(0, R - 1.5, 6.5, 0.35), SCENE.dirtDark);
+      fillPoly(circle(0, R - 0.6, 2.8, 10/12), "#C99366");
+      fillPoly([[-1,R,10/12],[1,R,10/12],[1,R+0.5,10/12],[-1,R+0.5,10/12]], SCENE.chalk);
+    } else {
+      fillPoly(circle(0, R, 2.5), SCENE.dirt);
+    }
+    // Distance markers along the first-base side
+    for (let d = 10; d <= 70; d += 10){
+      if (d > S.dist - 6 && d < S.dist + 6) continue;
+      strokeLine([[6,d,0],[8,d,0]], "rgba(255,255,255,.75)", 1.5);
+      label([10, d, 0], d + " ft", "rgba(255,255,255,.95)", 11);
+    }
+    // Batter's boxes and home plate
+    const PW = 17/24;
+    [-1,1].forEach(sd => { const x0 = sd*(PW + 0.5), x1 = sd*(PW + 4.5);
+      strokeLine([[x0,-2.3,0],[x1,-2.3,0],[x1,3.7,0],[x0,3.7,0],[x0,-2.3,0]], "rgba(255,255,255,.9)", 1.5); });
+    fillPoly([[-PW,PLATE_FRONT,0.01],[PW,PLATE_FRONT,0.01],[PW,PW,0.01],[0,0,0.01],[-PW,PW,0.01]], SCENE.chalk);
+
+    // Strike zone over the plate (front face, with the back edges faint)
+    const zb = ZB(), zt = ZT();
+    strokeLine([[-PW,0,zb],[-PW,0,zt],[PW,0,zt],[PW,0,zb],[-PW,0,zb]], "rgba(20,70,130,.35)", 1);
+    [[-PW,zb],[-PW,zt],[PW,zt],[PW,zb]].forEach(([x,z]) => strokeLine([[x,0,z],[x,PLATE_FRONT,z]], "rgba(20,70,130,.35)", 1));
+    fillPoly([[-PW,PLATE_FRONT,zb],[PW,PLATE_FRONT,zb],[PW,PLATE_FRONT,zt],[-PW,PLATE_FRONT,zt]], SCENE.zone);
+    strokeLine([[-PW,PLATE_FRONT,zb],[-PW,PLATE_FRONT,zt],[PW,PLATE_FRONT,zt],[PW,PLATE_FRONT,zb],[-PW,PLATE_FRONT,zb]], SCENE.zoneEdge, 1.5, [5,4]);
+
+    const drawPath = (path, col, w, dash=[]) => {
+      const pts = []; for (let i = 0; i <= 80; i++) pts.push(path.at(path.T*i/80));
+      strokeLine(pts, col, w, dash);
+    };
+    const releaseMark = (path, col, text, side) => {
+      const top = path.at(0);
+      strokeLine([[0, top[1], 0], top], col, 1.2, [3,3]);
+      const q = pr.pt(top); if (!q) return;
+      g.beginPath(); g.arc(q.x, q.y, Math.max(3.5, pr.scale(q.depth)*0.25), 0, 2*Math.PI); g.fillStyle = col; g.fill();
+      g.lineWidth = 1.5; g.strokeStyle = "#fff"; g.stroke();
+      label(top, text, "#fff", 12, side > 0 ? "left" : "right", -2, 10);
+    };
+
+    // In front toss mode, the game pitch's path in grey for comparison
+    if (typeof ref !== "undefined" && ref){
+      const gp = pathOf(ref.S, ref.S.tgt);
+      if (gp){
+        drawPath(gp, "rgba(59,71,82,.75)", 2.5);
+        releaseMark(gp, SCENE.ghost, `game pitch ${ftin(ref.S.rel)}`, -1);
+      }
+    }
+
+    const main = pathOf(S, S.tgt);
+    if (main){
+      if (!ref){
+        [ZT(), ZB()].forEach(h => { const e = pathOf(S, h); if (e) drawPath(e, "rgba(214,58,47,.35)", 1.5); });
+      }
+      if ($("showStraight").checked){
+        const top = main.at(0), Lf = main.y0 - PLATE_FRONT, tan = main.vy0/main.vx;
+        strokeLine([top, [0, PLATE_FRONT, top[2] + tan*Lf]], SCENE.straight, 1.6, [7,5]);
+      }
+      // the ball's track on the ground, then the path itself
+      const track = []; for (let i = 0; i <= 40; i++){ const p = main.at(main.T*i/40); track.push([p[0], p[1], 0.01]); }
+      strokeLine(track, "rgba(0,0,0,.12)", 3);
+      drawPath(main, SCENE.path, 3);
+      const step = +$("marks").value;
+      if (step > 0){
+        for (let t = step; t < main.T - step*0.3; t += step){
+          const q = pr.pt(main.at(t)); if (!q) continue;
+          const major = Math.abs(t*10 - Math.round(t*10)) < 1e-6;
+          g.beginPath(); g.arc(q.x, q.y, major ? 3.6 : 2.2, 0, 2*Math.PI);
+          g.fillStyle = major ? "#fff" : "rgba(255,255,255,.85)"; g.fill();
+          if (major){ g.lineWidth = 1.5; g.strokeStyle = SCENE.path; g.stroke(); }
+        }
+      }
+      releaseMark(main, SCENE.path, `release ${ftin(S.rel)}`, 1);
+      const end = main.at(main.T);
+      label(end, `${main.approach.toFixed(1)}° down`, "#fff", 13, "left", 0, 16);
+
+      // the ball (true size, never smaller than a few pixels so it stays visible) and its shadow
+      const tb = tBall == null ? main.T : Math.min(tBall, main.T);
+      const bp = main.at(tb), qb = pr.pt(bp), qs = pr.pt([bp[0], bp[1], 0.02]);
+      if (qs){ const rs = Math.max(2.5, pr.scale(qs.depth)*0.13); g.beginPath(); g.ellipse(qs.x, qs.y, rs*1.4, rs*0.5, 0, 0, 2*Math.PI); g.fillStyle = "rgba(0,0,0,.3)"; g.fill(); }
+      if (qb){
+        const rb = Math.max(3.5, pr.scale(qb.depth)*(1.45/12));
+        g.beginPath(); g.arc(qb.x, qb.y, rb + 3, 0, 2*Math.PI); g.fillStyle = "rgba(255,255,255,.35)"; g.fill();
+        g.beginPath(); g.arc(qb.x, qb.y, rb, 0, 2*Math.PI); g.fillStyle = SCENE.ball; g.fill();
+        g.lineWidth = Math.max(1.2, rb*0.18); g.strokeStyle = SCENE.path; g.stroke();
+      }
+    }
+    // Scene note
+    g.font = font(11, 600); g.textAlign = "left"; g.textBaseline = "alphabetic"; g.fillStyle = "rgba(23,33,42,.7)";
+    const camName = { behind:"Behind the batter", eyes:"Batter's eyes", catcher:"Catcher's view" }[$("cam3d").value];
+    g.fillText(`${camName} · true scale`, 10, H - 10);
+  }
+
+  function setView(v){
+    VIEW = v;
+    try { localStorage.setItem("pplView", v); } catch (_) {}
+    $("view2d").setAttribute("aria-pressed", v === "2d" ? "true" : "false");
+    $("view3d").setAttribute("aria-pressed", v === "3d" ? "true" : "false");
+    $("vizScroll").classList.toggle("is3d", v === "3d");
+    cancelAnimationFrame(anim);
+    if (v === "3d") draw3D(); else render();
+  }
+  $("view2d").addEventListener("click", () => setView("2d"));
+  $("view3d").addEventListener("click", () => setView("3d"));
+  ["cam3d","hand3d"].forEach(id => $(id).addEventListener("change", () => { try { localStorage.setItem("ppl_" + id, $(id).value); } catch (_) {} draw3D(); }));
+  try { ["cam3d","hand3d"].forEach(id => { const v = localStorage.getItem("ppl_" + id); if (v) $(id).value = v; }); } catch (_) {}
+  window.__ppl3d = true;
+
   syncAlt(); render(); syncModeUI(); fitScroll();
+  setView(VIEW);
 })();
 </script>
 
